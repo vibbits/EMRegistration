@@ -1,1 +1,3 @@
 /src/main/quasar/*.png
+/bin/
+/build/
