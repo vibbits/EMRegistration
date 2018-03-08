@@ -1,4 +1,4 @@
-package be.vib.imagej;
+package be.vib.imagej.registration;
 
 import org.scijava.command.Command;
 import org.scijava.log.LogService;

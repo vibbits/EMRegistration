@@ -1,0 +1,69 @@
+<project default="install">
+	
+	<property name="src.dir" value="src"/>
+	<property name="build.dir" value="build"/>
+	<property name="classes.dir" value="${build.dir}/classes"/>
+	<property name="jar.dir" value="${build.dir}/jar"/>
+	<property name="q.file" value="src/main/quasar/registration.q"/>
+	<property name="qlib.dir" value="${build.dir}/qlib"/>
+	<property name="qlib.file" value="${qlib.dir}/registration.qlib"/>
+	<property name="quasarbridge" value="JavaQuasarBridge-0.0.1.jar"/>  <!-- TODO? rename to just QuasarBridge ? -->
+	<property name="plugin.name" value="QuasarRegistration-0.0.1.jar"/>
+	<property name="fiji.plugins.dir" value="E:/Fiji.app/plugins"/>
+	<!-- <property name="minimalquasarzip.file" value="E:/git/bits/bioimaging/QuasarPortableInstaller_1.0.6590.25782_Windows_x64_runtime/Quasar.zip"/> -->
+	<property name="quasar.exe" value="E:/Program Files/Quasar/Quasar.exe"/>
+
+	<!-- Note: quasar.exe is needed to build the .qlib with denoising algorithms from their .q source counterparts. -->
+	<!-- Note: minimalquasarzip.file contains a zipped folder with a minimal Quasar runtime environment. It will be embedded in the JAR file. -->
+
+	<path id="classpath">
+		<fileset dir="e:/git/bits/bioimaging/JavaQuasarBridge/dist" includes="${quasarbridge}"/>
+		<fileset dir="e:/git/ImageJRepository" includes="ij-1.51n.jar"/>
+		<fileset dir="e:/git/ImageJRepository" includes="scijava-common-2.62.1.jar"/>
+	</path>
+	
+	<target name="clean">
+		<delete dir="${build.dir}"/>
+		<delete file="src/main/quasar/registration.qlib"/>
+	</target>
+
+	<target name="check.qlib">
+		<!-- IMPROVEME? should we also check if the .q files in the Quasar installation folder have changed (Quasar got upgraded) -->
+		<echo message="Checking if qlib needs to be rebuilt"/>
+		<uptodate targetfile="${qlib.file}" property="qlib.uptodate">
+			<srcfiles dir="src/main/quasar/" includes="**/*.q"/>
+		</uptodate>
+	</target>
+		
+	<target name="make.qlib" depends="check.qlib" unless="qlib.uptodate">
+		<mkdir dir="${qlib.dir}"/>
+		<exec executable="${quasar.exe}">
+			<arg value="--make_lib"/>
+			<arg value="--gpu"/>
+			<arg value="${q.file}"/>
+		</exec>
+		<copy file="src/main/quasar/registration.qlib" tofile="${qlib.file}"/>
+	</target>
+	
+	<target name="compile">
+		<mkdir dir="${classes.dir}"/>
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" includeantruntime="false" debug="true" debuglevel="lines,vars,source"/>
+	</target>
+		
+	<target name="jar" depends="compile,make.qlib">
+		<mkdir dir="${jar.dir}"/>
+		<jar destfile="${jar.dir}/${plugin.name}" basedir="${classes.dir}">
+			<manifest>
+				<attribute name="Class-Path" value="${quasarbridge}"/>
+			</manifest>
+			<fileset dir="${build.dir}" includes="qlib/*.qlib"/>
+			<fileset dir="${src.dir}/main/resources" includes="**/images/*"/>
+			<!-- <fileset file="${minimalquasarzip.file}"/> -->
+		</jar>
+	</target>
+		
+	<target name="install" depends="jar">
+		<copy file="${jar.dir}/${plugin.name}" todir="${fiji.plugins.dir}"/>
+	</target>
+					
+</project>
