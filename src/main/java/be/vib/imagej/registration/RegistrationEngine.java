@@ -44,9 +44,11 @@ public class RegistrationEngine
 		ImagePlus firstImage = opener.openImage(inputFiles.get(0).toString());
 		ImageProcessor referencePatch = cropImage(firstImage, rect);
 		
-		//QValue prevPatch = null;
-		int prevX = rect.x;
-		int prevY = rect.y;
+		final int firstSliceX = rect.x;
+		final int firstSliceY = rect.y;
+		
+		int prevX = firstSliceX;
+		int prevY = firstSliceY;
 				
 		// --
 		final int numSlices = inputFiles.size();
@@ -74,15 +76,18 @@ public class RegistrationEngine
 				RegistrationResult result = QExecutor.getInstance().submit(registerer).get(); // TODO: check what happens to quasar::exception_t if thrown from C++ during the registration task.
 								
 				// Shift the image to register it
-				int shiftX = result.posX - prevX;
-				int shiftY = result.posY - prevX;
-				image.translate(shiftX, shiftY);
+				int shiftX = result.posX - firstSliceX;
+				int shiftY = result.posY - firstSliceY;
+				image.translate(-shiftX, -shiftY);
 				System.out.println("--> Shift: X=" + shiftX + " Y=" + shiftY);
 				
 				// Save the registered image to the output folder
 				FileSaver saver = new FileSaver(imagePlus);
 				Path resultPath = Paths.get(outputFolder.toString(), String.format("registered_slice%05d.tif", sliceNr));
 				saver.saveAsTiff(resultPath.toString());
+				
+				// Free image resources now (to avoid Java out-of-memory issues)
+				imagePlus.close();
 
 				// Remember the position of the best matching patch,
 				// we use its position as an estimate for its position in the next slice.

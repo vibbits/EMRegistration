@@ -37,7 +37,7 @@ public class WizardPageSelectFolders extends WizardPage implements ActionListene
 		super(wizard, name);
 		
 		// BEGIN FIXME
-		wizard.getModel().setInputFolder(Paths.get("E:\\Datasets\\EM\\HPF\\2018_02_05_DEV_INWchem_cellMK\\QuickTest"));
+		wizard.getModel().setInputFolder(Paths.get("E:\\Datasets\\EM\\HPF\\2018_02_05_DEV_INWchem_cellMK\\Raw_Data_Cropped"));
 		wizard.getModel().setOutputFolder(Paths.get("E:\\Datasets\\EM\\HPF\\2018_02_05_DEV_INWchem_cellMK\\Out"));
 		wizard.getModel().setInputFiles(getFiles(wizard.getModel().getInputFolder()));
 		// END FIXME
