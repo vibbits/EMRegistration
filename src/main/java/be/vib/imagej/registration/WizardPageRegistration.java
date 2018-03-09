@@ -30,6 +30,8 @@ public class WizardPageRegistration extends WizardPage
 	private void buildUI()
 	{		
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+		
+		// IMPORTANT FIXME: add search window size!
 
 		startButton = new JButton("Start Registration");
 		cancelButton = new JButton("Cancel Registration");

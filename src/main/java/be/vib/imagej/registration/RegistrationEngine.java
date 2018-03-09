@@ -1,23 +1,17 @@
 package be.vib.imagej.registration;
 
 import java.awt.Rectangle;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.nio.file.Paths;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 import be.vib.bits.QExecutor;
-import be.vib.bits.QFunction;
-import be.vib.bits.QValue;
-//import be.vib.imagej.ImageUtils;
+
 import ij.ImagePlus;
-import ij.ImageStack;
+import ij.io.FileSaver;
 import ij.io.Opener;
-import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
 
 // The RegistrationEngine class is the main access point from ImageJ
 // to our registration machinery. It iterates over the images (=z-slices) in the input folder
@@ -35,35 +29,74 @@ public class RegistrationEngine
 		this.registerer = new Registerer();
 	}
 	
+	// IMPROVEME: we do not need to transfer the complete image to Quasar,
+	//            only the region over which we search for a match
+	
+	// IMPROVEME: loading large images takes a significant amount of time. It may make sense to load
+	//            the next image slice asynchronously, in parallel with registration of the current slice.
+	
 	public void register(List<Path> inputFiles, Path outputFolder, Rectangle rect)
 	{
-		int sliceNr = 0;
+		// ImageJ image opener object
+		Opener opener = new Opener();  
+
+		// Extract reference patch from the first image
+		ImagePlus firstImage = opener.openImage(inputFiles.get(0).toString());
+		ImageProcessor referencePatch = cropImage(firstImage, rect);
+		
+		//QValue prevPatch = null;
+		int prevX = rect.x;
+		int prevY = rect.y;
+				
+		// --
+		final int numSlices = inputFiles.size();
+		int sliceNr = 1;
 		for (Path inputFile : inputFiles)
 		{
 			if (isCancelled())
-				continue; // CHECKME: break instead?
+				break;
 			
-			Opener opener = new Opener();  
-			System.out.print("Loading " + inputFile.toString() + "...");
-			ImagePlus img = opener.openImage(inputFile.toString());
+			System.out.print("Loading " + sliceNr + "/" + numSlices + " : " + inputFile.toString() + "...");
+			ImagePlus imagePlus = opener.openImage(inputFile.toString());
 			System.out.println(" done.");
 			
-//			try
-//			{
-//				// FIXME! how does registerer get its params?
-//			    registerer.setParams(xxxxx);
-//				xxxresult = QExecutor.getInstance().submit(registerer).get(); // TODO: check what happens to quasar::exception_t if thrown from C++ during the registration task.
-//                // TODO: shift slice over offset that was calculated and save it to the outputFolder
-//			}
-//			catch (ExecutionException | InterruptedException e)
-//			{
-//				e.printStackTrace();
-//			}
+			if (imagePlus == null)
+				break; // TODO: this indicates an error during reading of the image - make sure the user is informed properly
+			
+			ImageProcessor image = imagePlus.getProcessor();
+			if (image == null)
+				break; // TODO: inform user
+			
+			try
+			{
+				// Calculate the shift required to register this slice to the previous one
+			    registerer.setParameters(image, referencePatch, prevX, prevY);
+				RegistrationResult result = QExecutor.getInstance().submit(registerer).get(); // TODO: check what happens to quasar::exception_t if thrown from C++ during the registration task.
+								
+				// Shift the image to register it
+				int shiftX = result.posX - prevX;
+				int shiftY = result.posY - prevX;
+				image.translate(shiftX, shiftY);
+				System.out.println("--> Shift: X=" + shiftX + " Y=" + shiftY);
+				
+				// Save the registered image to the output folder
+				FileSaver saver = new FileSaver(imagePlus);
+				Path resultPath = Paths.get(outputFolder.toString(), String.format("registered_slice%05d.tif", sliceNr));
+				saver.saveAsTiff(resultPath.toString());
+
+				// Remember the position of the best matching patch,
+				// we use its position as an estimate for its position in the next slice.
+				prevX = result.posX;
+				prevY = result.posY;
+			}
+			catch (ExecutionException | InterruptedException e)
+			{
+				e.printStackTrace();
+			}
 			
 			// Progress feedback
-			sliceNr++;
-			final int numSlices = inputFiles.size();
 			publish((100 * sliceNr) / numSlices);
+			sliceNr++;
 		}
 	}
 	
@@ -83,4 +116,10 @@ public class RegistrationEngine
 		return false; 
 	}
 	
+	private ImageProcessor cropImage(ImagePlus imagePlus, Rectangle rect)
+	{
+		ImageProcessor imp = imagePlus.getProcessor();
+		imp.setRoi(rect);
+		return imp.crop();
+	}
 }

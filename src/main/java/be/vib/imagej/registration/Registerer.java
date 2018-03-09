@@ -2,43 +2,60 @@ package be.vib.imagej.registration;
 
 import java.util.concurrent.Callable;
 
+import be.vib.bits.QFunction;   // IMPROVEME: move the quasar code to be.vib.bits.quasar (or be.vib.quasar).
+import be.vib.bits.QValue;
+import ij.process.ImageProcessor;
 
-public class Registerer implements Callable<Void>
+
+public class Registerer implements Callable<RegistrationResult>
 {
-//	public Registerer()
-//	{
-//	}
+//	private final static double alpha = 1.0;
+	private final static int searchWindow = 25;  // in pixels, so all shifts dx and dy in -search_window to +search_window are checked exhaustively for the optimal shift
 	
-
+	private ImageProcessor referencePatch;  // IMPROVEME: make this a QValue too, since we now repeatedly convert the reference patch to a QValue cube
+	private ImageProcessor image;
+	private int prevX;
+	private int prevY;
+	
+	public Registerer()
+	{
+	}
+	
+	public void setParameters(ImageProcessor image, ImageProcessor referencePatch, int prevX, int prevY)
+	{
+		this.image = image;
+		this.referencePatch = referencePatch;
+		this.prevX = prevX;
+		this.prevY = prevY;
+	}
+	
 	// Important: call() *must* be run on the Quasar thread!
 	@Override
-	public Void call()
-	{		/*
-		QFunction gaussian = new QFunction("gaussian_filter(mat,scalar,int,string)");
+	public RegistrationResult call()
+	{		
+		QValue img = ImageUtils.newCubeFromImage(image);
+		QValue refPatch = ImageUtils.newCubeFromImage(referencePatch);
 		
-		QValue noisyImageCube = ImageUtils.newCubeFromImage(image);
+		// Quasar function registration(img, ref_patch, xmin, xmax, ymin, ymax, best_pos, best_patch)
+		QFunction registration = new QFunction("registration(mat,mat,int,int,int,int,mat,mat)"); 
 		
-		//float r = ImageUtils.bitRange(image);
-		
-		//QUtils.inplaceDivide(noisyImageCube, r);  // scale pixels values from [0, 255] or [0, 65535] down to [0, 1]
+		QFunction zeros = new QFunction("zeros(...)");
 
-		GaussianParams params = (GaussianParams)this.params;
+		QValue best_pos = zeros.apply(new QValue(1), new QValue(2));  // a 1x2 placeholder vector for returning the position [y, x] of the best matching patch
+		QValue best_patch = zeros.apply(refPatch.size()); // placeholder
 
-		QValue denoisedImageCube = gaussian.apply(noisyImageCube,
-							                      new QValue(params.sigma),
-							                      new QValue(0),
-							                      new QValue("mirror"));
-		
-		noisyImageCube.dispose();
+		int xmin = Math.max(0, prevX - searchWindow);
+		int xmax = Math.min(prevX + searchWindow, image.getWidth() - referencePatch.getWidth() - 1);
 
-		//QUtils.inplaceMultiply(denoisedImageCube, r); // scale pixels values back to [0, 255] or [0, 65535]
+		int ymin = Math.max(0, prevY - searchWindow);
+		int ymax = Math.min(prevY + searchWindow, image.getHeight() - referencePatch.getHeight() - 1);
 
-		ImageProcessor denoisedImage = ImageUtils.newImageFromCube(image, denoisedImageCube);
+		registration.apply(img, refPatch, new QValue(xmin), new QValue(xmax), new QValue(ymin), new QValue(ymax), best_pos, best_patch);
 
-		denoisedImageCube.dispose();
-
-		return denoisedImage;*/
-		return null;
+		RegistrationResult result = new RegistrationResult();
+		result.posX = best_pos.at(1).getInt();
+		result.posY = best_pos.at(0).getInt();
+		return result;
 	}
 
 }

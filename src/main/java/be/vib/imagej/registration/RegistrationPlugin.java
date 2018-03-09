@@ -6,7 +6,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 @Plugin(type = Command.class, menuPath = "Plugins>EM Registration>Register")
-public class RegistrationIJ2 implements Command
+public class RegistrationPlugin implements Command
 {
 	@Parameter
 	private LogService log;
@@ -19,7 +19,7 @@ public class RegistrationIJ2 implements Command
 		Wizard wizard = RegistrationWizardSingleton.getInstance();
 		wizard.setVisible(true);
 		
-		// After displaying the registration wizard the ImageJ plugin run() method finishes immediately,
+		// After displaying the registration wizard, the ImageJ2 plugin run() method finishes immediately,
 		// but the wizard is still visible and active.
 	}
 }
