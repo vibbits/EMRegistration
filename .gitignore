@@ -1,3 +1,4 @@
 /src/main/quasar/*.png
+/src/main/quasar/*.qlib
 /bin/
 /build/
