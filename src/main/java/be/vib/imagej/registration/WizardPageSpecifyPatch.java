@@ -8,23 +8,21 @@ import ij.gui.RoiListener;
 
 public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 {					
-	// TODO: 
-	// 1. done
-	// 2. done
-	// 3. maybe lock the image(s) we work on to avoid that the users closes them while we are busy?
-	// 4. change the info message when the user selected a ROI
+	// TODO: Lock the reference image so the user cannot close it while we are busy registering.
+	
+	private JLabel infoLabel;
 	
 	public WizardPageSpecifyPatch(Wizard wizard, String name)
 	{
-		super(wizard, name);
-		
+		super(wizard, name);		
 		buildUI();
 	}
 
 	private void buildUI()
 	{		
-		JLabel label = new JLabel("Please select a ROI with the patch that will be used for registering the image slices.");
-		add(label);
+		infoLabel = new JLabel();
+		add(infoLabel);
+		handleChange();
 	}
 
 	@Override
@@ -34,48 +32,56 @@ public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 			return;
 		
 		if (img != wizard.getModel().referenceImage)
-			return;  // We're not interested in ROI changes for an image that is not our first slice image
+			return;  // We're not interested in ROI changes for an image that is not our reference image
 						
 		assert(SwingUtilities.isEventDispatchThread());
-		handleChange(); // CHECKME: no need for invokeLater() because we're on the EDT, right?
-//		SwingUtilities.invokeLater(() -> { handleChange(); }); 
+		handleChange();
 	}
 
 	@Override
 	public void goingToNextPage() 
 	{
-		assert(SwingUtilities.isEventDispatchThread());
-		ij.gui.Roi.removeRoiListener(this);  // stop listening to ROI changes		
+		leavePage();
 	}
 
 	@Override
 	public void goingToPreviousPage()
 	{
-		assert(SwingUtilities.isEventDispatchThread());
-		ij.gui.Roi.removeRoiListener(this);  // stop listening to ROI changes	
+		leavePage();
 	}
 
 	@Override
 	public void arriveFromNextPage() 
 	{
-		setupPage();
+		enterPage();
 	}
 	
 	@Override
 	public void arriveFromPreviousPage()
 	{
-		setupPage();
+		enterPage();
 	}	
 	
-	private void setupPage()
+	private void enterPage()
 	{
 		assert(SwingUtilities.isEventDispatchThread());	
 		ij.gui.Roi.addRoiListener(this);
 		handleChange();		
 	}
 	
+	private void leavePage()
+	{
+		assert(SwingUtilities.isEventDispatchThread());
+		ij.gui.Roi.removeRoiListener(this);  // stop listening to ROI changes	
+	}
+	
 	private void handleChange()  // must be called on the EDT
 	{
+		if (haveReferenceImageWithRoi())
+			infoLabel.setText("The selected ROI will be used for registering the images.");
+		else
+			infoLabel.setText("Please select a ROI that can be used for registering the images.");
+		
 		wizard.updateButtons();
 	}
 	
