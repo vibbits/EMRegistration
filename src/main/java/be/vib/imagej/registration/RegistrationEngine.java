@@ -24,8 +24,8 @@ public class RegistrationEngine
 {
 	private Registerer registerer;
 	
-	private final static int searchWindowX = 10;
-	private final static int searchWindowY = 25;  // in pixels, so all shifts dx and dy in -search_window to +search_window are checked exhaustively for the optimal shift
+	private final static int maxShiftX = 10;
+	private final static int maxShiftY = 25;  // in pixels, all possible shifts (from -maxShiftX/Y to +maxShiftX/Y) are checked exhaustively for the optimal patch match
 	
 	public RegistrationEngine()
 	{
@@ -65,7 +65,7 @@ public class RegistrationEngine
 			long saveStart = 0;
 			long saveEnd = 0;
 			
-			System.out.print("Image " + sliceNr + "/" + numSlices + " : " + inputFile.toString() + "...");
+			System.out.println("Image " + sliceNr + "/" + numSlices + " : " + inputFile.toString() + "...");
 			loadStart = System.nanoTime();
 			ImagePlus imagePlus = opener.openImage(inputFile.toString());
 			loadEnd = System.nanoTime();
@@ -79,10 +79,10 @@ public class RegistrationEngine
 
 			// Find coordinates (with respect to the full image) of the region where we will look for the patch.
 			// So this rectangular crop of the image needs to be sent to Quasar.
-			int cropTopLeftX = Math.max(0, prevX - searchWindowX);
-			int cropTopLeftY = Math.max(0, prevY - searchWindowY);
-			int cropBottomRightX = Math.min(prevX + searchWindowX + referencePatch.getWidth(), image.getWidth() -  1);
-			int cropBottomRightY = Math.min(prevY + searchWindowY + referencePatch.getHeight(), image.getHeight() - 1);
+			int cropTopLeftX = Math.max(0, prevX - maxShiftX);
+			int cropTopLeftY = Math.max(0, prevY - maxShiftY);
+			int cropBottomRightX = Math.min(prevX + maxShiftX + referencePatch.getWidth(), image.getWidth() -  1);
+			int cropBottomRightY = Math.min(prevY + maxShiftY + referencePatch.getHeight(), image.getHeight() - 1);
 			
 			Rectangle cropRect = new Rectangle(cropTopLeftX, cropTopLeftY, cropBottomRightX - cropTopLeftX, cropBottomRightY - cropTopLeftY);
 			ImageProcessor croppedImage = cropImage(imagePlus, cropRect);
@@ -112,7 +112,7 @@ public class RegistrationEngine
 			int shiftX = bestPosX - initialX;
 			int shiftY = bestPosY - initialY;
 			image.translate(-shiftX, -shiftY);
-			System.out.println("--> Shift: X=" + shiftX + " Y=" + shiftY);
+			System.out.println("Shift: X=" + shiftX + " Y=" + shiftY);
 			
 			// Update the most recent position of the best matching patch,
 			// we use its position as an estimate for the location of the patch in the next image.
@@ -122,10 +122,10 @@ public class RegistrationEngine
 			// Save the registered image to the output folder			
 			saveStart = System.nanoTime();
 			FileSaver saver = new FileSaver(imagePlus);
-			Path resultPath = Paths.get(outputFolder.toString(), String.format("registered_slice%05d.tif", sliceNr));
+			Path resultPath = suggestOutputFilename(inputFile, outputFolder);
 			saver.saveAsTiff(resultPath.toString());
 			saveEnd = System.nanoTime();
-			
+	
 			// Show some timing statistics
 			printStatistics(loadStart, loadEnd, registerStart, registerEnd, saveStart, saveEnd);
 			
@@ -151,6 +151,29 @@ public class RegistrationEngine
 		return false; 
 	}
 	
+	// Returns an output file path like this:
+	// desired output folder + original filename (without extension) + _registered + original extension (if any)
+	private Path suggestOutputFilename(Path inputFilePath, Path outputFolder)
+	{
+		String suffix = "_registered";	
+		String filename = inputFilePath.getName(inputFilePath.getNameCount() - 1).toString(); // filename part only (including extension, if any)
+		
+	    int dotIndex = filename.toString().lastIndexOf('.');
+	    if (dotIndex == -1)
+	    {
+	    	// Original file has no extension, just append the suffix.
+	    	return Paths.get(outputFolder.toString(), filename + suffix);
+	    }
+	    else
+	    {
+	    	// Original file has an extension, insert the suffix just before the extension in the original filename
+	    	String filenameWithoutExtension = filename.substring(0, dotIndex);
+	    	String extension = filename.substring(dotIndex);
+	    	return Paths.get(outputFolder.toString(), filenameWithoutExtension + suffix + extension);
+	    }
+	}
+	
+	// Print some timing statistics
 	private void printStatistics(long readFileStart, long readFileEnd, long registerStart, long registerEnd, long saveStart, long saveEnd)
 	{
 		long readDuration = (readFileEnd - readFileStart) / 1000000;
@@ -159,6 +182,7 @@ public class RegistrationEngine
 		System.out.println(String.format("Load %d, register %d, save %d (ms)", readDuration, registerDuration, saveDuration));
 	}
 	
+	// Returns a copy of the given image cropped to a rectangular region of interest.
 	private ImageProcessor cropImage(ImagePlus imagePlus, Rectangle rect)
 	{
 		ImageProcessor imp = imagePlus.getProcessor();
