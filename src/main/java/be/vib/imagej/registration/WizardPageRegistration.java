@@ -23,11 +23,13 @@ public class WizardPageRegistration extends WizardPage
 	public WizardPageRegistration(Wizard wizard, String name)
 	{
 		super(wizard, name);
-		
 		buildUI();
 	}
 
-	private void buildUI() // FIXME: height of the this wizardpage is sometimes too small
+	// TODO: after registration, report on max shift in X and Y;
+	//       this may help the user gain some intuition on how large these shifts typically are.
+	
+	private void buildUI()
 	{		
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		
@@ -57,13 +59,14 @@ public class WizardPageRegistration extends WizardPage
 		add(Box.createRigidArea(new Dimension(0, 10)));
 		add(startButton);
 		add(progressBar);
+		add(Box.createRigidArea(new Dimension(0, 10)));
 		add(statusLabel);
-		add(Box.createRigidArea(new Dimension(0, 20)));
+		add(Box.createRigidArea(new Dimension(0, 10)));
 		add(cancelButton);
 		add(Box.createVerticalGlue());
-		
+
 		setReadyToRegister();
-}
+	}
 
     // register() is executed on the Java EDT, so it needs to complete ASAP.
 	// Off-load calculations to a separate thread and return immediately.
@@ -85,7 +88,7 @@ public class WizardPageRegistration extends WizardPage
 		progressBar.setValue(0);
 		progressBar.setStringPainted(true); // show percentage progress as text in the progress bar
 		progressBar.setVisible(true);
-		
+				
 		Runnable whenDone = () -> {
 			busyRegistering = false;
 			cancelButton.setVisible(false);
@@ -111,9 +114,8 @@ public class WizardPageRegistration extends WizardPage
 		
 		busyRegistering = false;
 		setReadyToRegister();		
-		wizard.pack();
 	}	
-
+	
 	@Override
 	public boolean canGoToPreviousPage()
 	{

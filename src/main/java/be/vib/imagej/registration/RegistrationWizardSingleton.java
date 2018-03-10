@@ -1,5 +1,7 @@
 package be.vib.imagej.registration;
 
+import java.awt.Dimension;
+
 // A Bill Pugh singleton for the registration wizard.
 public class RegistrationWizardSingleton
 {
@@ -27,6 +29,7 @@ public class RegistrationWizardSingleton
 							   new WizardPageRegistration(wizard, "Registration") };
 		
 		wizard.build(pages);
+		wizard.setMinimumSize(new Dimension(0, 350)); // IMPROVEME: this ensures that WizardPageRegistration is tall enough, enforce that there instead of here.
 		wizard.pack();
 		wizard.moveToMiddleOfScreen();
 				
