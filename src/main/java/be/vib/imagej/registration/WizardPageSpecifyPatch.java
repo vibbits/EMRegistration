@@ -6,10 +6,9 @@ import javax.swing.SwingUtilities;
 import ij.ImagePlus;
 import ij.gui.RoiListener;
 
+@SuppressWarnings("serial")
 public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 {					
-	// TODO: Lock the reference image so the user cannot close it while we are busy registering.
-	
 	private JLabel infoLabel;
 	
 	public WizardPageSpecifyPatch(Wizard wizard, String name)

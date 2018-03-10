@@ -3,6 +3,7 @@ package be.vib.imagej.registration;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
+@SuppressWarnings("serial")
 public class WizardPage extends JPanel
 {
 	protected Wizard wizard;

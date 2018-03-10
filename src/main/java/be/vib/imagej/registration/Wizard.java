@@ -25,6 +25,7 @@ import javax.swing.border.EmptyBorder;
  * The wizard has no cancel button - user can close the dialog via the window's close button to cancel.
  *
  */
+@SuppressWarnings("serial")
 public class Wizard extends JDialog
                     implements ActionListener
 {		

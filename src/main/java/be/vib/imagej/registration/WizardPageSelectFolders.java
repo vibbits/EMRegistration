@@ -21,6 +21,7 @@ import javax.swing.JTextField;
 import ij.ImagePlus;
 import ij.io.Opener;
 
+@SuppressWarnings("serial")
 public class WizardPageSelectFolders extends WizardPage implements ActionListener
 {		
 	private JLabel inputFolderLabel;
@@ -56,8 +57,8 @@ public class WizardPageSelectFolders extends WizardPage implements ActionListene
 	private void buildUI()
 	{		
 		// IMPROVEME: place a green check mark or a red cross next to the folder to indicate if the folder exists or not
-		// TODO: add output filename prefix input field
-		// TODO: add info/error label to inform the user that e.g. the input directory exists but is empty
+		// TODO? add some kind of file filter on the input folder; it often contains a couple of non-tiff files that must be ignored
+		// TODO? add info/error label to inform the user that e.g. the input directory exists but is empty
 		// TODO: make directory fields editable
 		// TODO: remember last input and output folders
 		// TODO: make sure that file selector opens in the directory that was specified previously (when opening closing it multiple times)
@@ -183,8 +184,8 @@ public class WizardPageSelectFolders extends WizardPage implements ActionListene
 		ImagePlus imp = opener.openImage(firstSliceName.toString());
 		
 		wizard.getModel().referenceImage = imp;
-		// FIXME: lock/unlock image
-		
+		// FIXME: Lock the reference image so the user cannot close it while we are busy registering.
+				
 		imp.show();
 		
 		// FIXME: Currently if we move back and forth between this page and the next, we repeatedly open the same image

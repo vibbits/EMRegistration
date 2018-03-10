@@ -2,6 +2,7 @@ package be.vib.imagej.registration;
 
 import javax.swing.JLabel;
 
+@SuppressWarnings("serial")
 public class WizardPageInitializeQuasar extends WizardPage
 {
 	private boolean initialized = false;

@@ -9,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
+@SuppressWarnings("serial")
 public class WizardPageRegistration extends WizardPage
 {		
 	//private DenoiseSummaryPanel denoiseSummaryPanel;
