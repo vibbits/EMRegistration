@@ -1,10 +1,13 @@
 package be.vib.imagej.registration;
 
-//import be.vib.bits.QValue;
-
 public class RegistrationResult
 {
-	//QValue patch;
-	int posX;
-	int posY;
+	public int posX;
+	public int posY;
+	
+	public RegistrationResult(int posX, int posY)
+	{
+		this.posX = posX;
+		this.posY = posY;
+	}
 }

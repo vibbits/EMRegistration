@@ -2,61 +2,57 @@ package be.vib.imagej.registration;
 
 import java.util.concurrent.Callable;
 
-import be.vib.bits.QFunction;   // IMPROVEME: move the quasar code to be.vib.bits.quasar (or be.vib.quasar).
+import be.vib.bits.QFunction;   // IMPROVEME: move the Quasar code to be.vib.bits.quasar (or be.vib.quasar).
 import be.vib.bits.QValue;
 import ij.process.ImageProcessor;
 
-
 public class Registerer implements Callable<RegistrationResult>
 {
-//	private final static double alpha = 1.0;
-	private final static int searchWindowX = 10;
-	private final static int searchWindowY = 25;  // in pixels, so all shifts dx and dy in -search_window to +search_window are checked exhaustively for the optimal shift
-	
-	private ImageProcessor referencePatch;  // IMPROVEME: make this a QValue too, since we now repeatedly convert the reference patch to a QValue cube
+	private ImageProcessor referencePatch;
 	private ImageProcessor image;
-	private int prevX;
-	private int prevY;
+	private int xmin;
+	private int ymin;
+	private int xmax;
+	private int ymax;
 	
 	public Registerer()
 	{
+		this.xmin = this.ymin = this.xmax = this.ymax = 0;
 	}
 	
-	public void setParameters(ImageProcessor image, ImageProcessor referencePatch, int prevX, int prevY)
+	public void setParameters(ImageProcessor image, ImageProcessor referencePatch, int xmin, int xmax, int ymin, int ymax)
 	{
 		this.image = image;
 		this.referencePatch = referencePatch;
-		this.prevX = prevX;
-		this.prevY = prevY;
+		this.xmin = xmin;
+		this.ymin = ymin;
+		this.xmax = xmax;
+		this.ymax = ymax;
 	}
 	
 	// Important: call() *must* be run on the Quasar thread!
 	@Override
 	public RegistrationResult call()
 	{		
-		QValue img = ImageUtils.newCubeFromImage(image);
-		QValue refPatch = ImageUtils.newCubeFromImage(referencePatch);
+		QValue quasarImage = ImageUtils.newCubeFromImage(image);
+		QValue quasarReferencePatch = ImageUtils.newCubeFromImage(referencePatch);   // TODO: avoid repeatedly converting the (currently fixed) reference patch to a Quasar cube
 		
-		// Quasar function registration(img, ref_patch, xmin, xmax, ymin, ymax, best_pos, best_patch)
-		QFunction registration = new QFunction("registration(mat,mat,int,int,int,int,mat,mat)"); 
+		// Quasar function registration(img, ref_patch, xmin, xmax, ymin, ymax, best_pos)
+		QFunction registration = new QFunction("registration(mat,mat,int,int,int,int,mat)"); 
 		
 		QFunction zeros = new QFunction("zeros(...)");
+		QValue bestPos = zeros.apply(new QValue(1), new QValue(2));  // a 1x2 placeholder vector for returning the position [y, x] of the best matching patch
 
-		QValue best_pos = zeros.apply(new QValue(1), new QValue(2));  // a 1x2 placeholder vector for returning the position [y, x] of the best matching patch
-		QValue best_patch = zeros.apply(refPatch.size()); // placeholder
+		registration.apply(quasarImage, quasarReferencePatch, new QValue(xmin), new QValue(xmax), new QValue(ymin), new QValue(ymax), bestPos);
 
-		int xmin = Math.max(0, prevX - searchWindowX);
-		int xmax = Math.min(prevX + searchWindowX, image.getWidth() - referencePatch.getWidth() - 1);
-
-		int ymin = Math.max(0, prevY - searchWindowY);
-		int ymax = Math.min(prevY + searchWindowY, image.getHeight() - referencePatch.getHeight() - 1);
-
-		registration.apply(img, refPatch, new QValue(xmin), new QValue(xmax), new QValue(ymin), new QValue(ymax), best_pos, best_patch);
-
-		RegistrationResult result = new RegistrationResult();
-		result.posX = best_pos.at(1).getInt();
-		result.posY = best_pos.at(0).getInt();
-		return result;
+		int posX = bestPos.at(1).getInt();
+		int posY = bestPos.at(0).getInt();
+		
+		quasarImage.dispose();
+		quasarReferencePatch.dispose();
+		bestPos.dispose();
+		
+		return new RegistrationResult(posX, posY);
 	}
 
 }

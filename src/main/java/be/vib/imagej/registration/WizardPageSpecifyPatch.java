@@ -5,14 +5,14 @@ import javax.swing.SwingUtilities;
 
 import ij.ImagePlus;
 import ij.gui.RoiListener;
-//import ij.process.ImageProcessor;
 
 public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 {					
 	// TODO: 
-	// 1. Tell the user to select the template for registration as ROI on the first slice.
-	// 2. track ROI changes and enable/disable the next button
-	// 3. maybe also lock the image(s) we work on to avoid that the users closes them while we are busy.
+	// 1. done
+	// 2. done
+	// 3. maybe lock the image(s) we work on to avoid that the users closes them while we are busy?
+	// 4. change the info message when the user selected a ROI
 	
 	public WizardPageSpecifyPatch(Wizard wizard, String name)
 	{
@@ -23,7 +23,7 @@ public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 
 	private void buildUI()
 	{		
-		JLabel label = new JLabel("Please select a ROI with the marks that will be used from registering the image slices.");
+		JLabel label = new JLabel("Please select a ROI with the patch that will be used for registering the image slices.");
 		add(label);
 	}
 
