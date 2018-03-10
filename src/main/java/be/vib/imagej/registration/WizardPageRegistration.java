@@ -12,12 +12,11 @@ import javax.swing.JProgressBar;
 @SuppressWarnings("serial")
 public class WizardPageRegistration extends WizardPage
 {		
-	//private DenoiseSummaryPanel denoiseSummaryPanel;
+	private MaxShiftPanel maxShiftPanel;
 	private JButton startButton;
 	private JButton cancelButton;
 	private JLabel statusLabel;
 	private JProgressBar progressBar;
-	//private RangeSelectionPanel rangeSelectionPanel;
 	private boolean busyRegistering = false;
 	private RegistrationSwingWorker worker;
 	
@@ -28,12 +27,10 @@ public class WizardPageRegistration extends WizardPage
 		buildUI();
 	}
 
-	private void buildUI()
+	private void buildUI() // FIXME: height of the this wizardpage is sometimes too small
 	{		
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		
-		// IMPORTANT FIXME: add search window size!
-
 		startButton = new JButton("Start Registration");
 		cancelButton = new JButton("Cancel Registration");
 		
@@ -41,8 +38,6 @@ public class WizardPageRegistration extends WizardPage
 		
 		progressBar = new JProgressBar();
 		
-		setButtonsReadyToRegister();
-
 		startButton.addActionListener(e -> {
 			register();
 		});
@@ -51,28 +46,24 @@ public class WizardPageRegistration extends WizardPage
 		    worker.cancel(false);
 		});
 		
-//		denoiseSummaryPanel = new DenoiseSummaryPanel(wizard.getModel());
-//		denoiseSummaryPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, denoiseSummaryPanel.getMaximumSize().height));
-//		
-//		rangeSelectionPanel = new RangeSelectionPanel(wizard.getModel(), startButton);
-//		rangeSelectionPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, rangeSelectionPanel.getPreferredSize().height));
-//		rangeSelectionPanel.addEventListener(this);
-//		
-//		rangeSelectionPanel.setAlignmentX(CENTER_ALIGNMENT);
+		maxShiftPanel = new MaxShiftPanel();
+		maxShiftPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, maxShiftPanel.getMaximumSize().height));
+	
 		startButton.setAlignmentX(CENTER_ALIGNMENT);
 		cancelButton.setAlignmentX(CENTER_ALIGNMENT);
 		statusLabel.setAlignmentX(CENTER_ALIGNMENT);
 		
-//		add(denoiseSummaryPanel);
-//		add(Box.createRigidArea(new Dimension(0, 10)));
-//		add(rangeSelectionPanel);
-//		add(Box.createRigidArea(new Dimension(0, 10)));
+		add(maxShiftPanel);
+		add(Box.createRigidArea(new Dimension(0, 10)));
 		add(startButton);
 		add(progressBar);
 		add(statusLabel);
 		add(Box.createRigidArea(new Dimension(0, 20)));
 		add(cancelButton);
-		add(Box.createVerticalGlue());	}
+		add(Box.createVerticalGlue());
+		
+		setReadyToRegister();
+}
 
     // register() is executed on the Java EDT, so it needs to complete ASAP.
 	// Off-load calculations to a separate thread and return immediately.
@@ -80,12 +71,12 @@ public class WizardPageRegistration extends WizardPage
 	{		
 		busyRegistering = true;
 		wizard.updateButtons();  // disable the Back button while we're busy registering
-
+		
 		startButton.setVisible(false);
 		cancelButton.setVisible(true);
-		
-		//rangeSelectionPanel.setEnabled(false);
-		
+				
+		maxShiftPanel.setEditable(false);
+
 		statusLabel.setText("Registering...");
 		statusLabel.setVisible(true);
 		
@@ -98,7 +89,6 @@ public class WizardPageRegistration extends WizardPage
 		Runnable whenDone = () -> {
 			busyRegistering = false;
 			cancelButton.setVisible(false);
-//			rangeSelectionPanel.setEnabled(true);
 			statusLabel.setText(worker.isCancelled() ? "Registration cancelled": "Registration done");
 			progressBar.setVisible(false);
 			wizard.updateButtons();
@@ -106,7 +96,7 @@ public class WizardPageRegistration extends WizardPage
 			
 		WizardModel model = wizard.getModel();
 		Rectangle rect = model.referenceImage.getRoi().getBounds();
-		worker = new RegistrationSwingWorker(model.getInputFiles(), model.getOutputFolder(), rect, progressBar, whenDone);
+		worker = new RegistrationSwingWorker(model.getInputFiles(), model.getOutputFolder(), rect, maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(), progressBar, whenDone);
 		
 		// Run the registration on a separate worker thread and return here immediately.
 		// Once registration has completed, the worker will automatically update the user interface to indicate this.
@@ -116,17 +106,11 @@ public class WizardPageRegistration extends WizardPage
 	@Override
 	public void arriveFromPreviousPage()
 	{
-		// After registration was complete, we may have gone back, chosen another image or image stack, 
-		// and returned to the registration panel. So some status messages or buttons may need to be updated.
+		// After registration was complete, we may have gone back, chosen another set of images
+		// and returned to the registration panel. So we may need to update the state of the user interface.
 		
 		busyRegistering = false;
-		
-		//rangeSelectionPanel.aboutToShow();
-		
-		//denoiseSummaryPanel.updateText();
-
-		setButtonsReadyToRegister();
-		
+		setReadyToRegister();		
 		wizard.pack();
 	}	
 
@@ -136,8 +120,9 @@ public class WizardPageRegistration extends WizardPage
 		return !busyRegistering;
 	}
 
-	private void setButtonsReadyToRegister()
+	private void setReadyToRegister()
 	{
+		maxShiftPanel.setEditable(true);
 		startButton.setVisible(true);
 		cancelButton.setVisible(false);
 		progressBar.setVisible(false);

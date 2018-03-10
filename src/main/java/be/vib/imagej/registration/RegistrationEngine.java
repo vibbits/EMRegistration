@@ -24,16 +24,15 @@ public class RegistrationEngine
 {
 	private Registerer registerer;
 	
-	private final static int maxShiftX = 10;
-	private final static int maxShiftY = 25;  // in pixels, all possible shifts (from -maxShiftX/Y to +maxShiftX/Y) are checked exhaustively for the optimal patch match
-	
 	public RegistrationEngine()
 	{
 		this.registerer = new Registerer();
 	}
 	
-	public void register(List<Path> inputFiles, Path outputFolder, Rectangle rect)
+	public void register(List<Path> inputFiles, Path outputFolder, Rectangle rect, int maxShiftX, int maxShiftY)
 	{
+		System.out.println("Maximum shift in pixels: X=" + maxShiftX + " Y=" + maxShiftY);
+		
 		// ImageJ image opener object
 		Opener opener = new Opener();  
 
