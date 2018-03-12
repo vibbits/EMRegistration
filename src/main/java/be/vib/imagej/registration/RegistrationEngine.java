@@ -35,6 +35,9 @@ public class RegistrationEngine
 		
 		// ImageJ image opener object
 		Opener opener = new Opener();  
+		
+		// Show info on reference patch
+		System.out.println(String.format("Reference patch: top-left corner x=%d y=%d, width=%d height=%d", rect.x, rect.y, rect.width, rect.height));
 
 		// Coordinates of the top-left corner of the reference patch in the original image.
 		final int initialX = rect.x;

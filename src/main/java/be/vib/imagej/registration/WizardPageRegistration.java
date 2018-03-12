@@ -29,6 +29,10 @@ public class WizardPageRegistration extends WizardPage
 	// TODO: after registration, report on max shift in X and Y;
 	//       this may help the user gain some intuition on how large these shifts typically are.
 	
+	// TODO: log/print the exact registration parameters: max shift x & y, reference patch size, and reference patch location;
+	
+	// TODO: add summary section again with indication of input and output folders - we don't want to accidentally dump a large amount of files in the wrong place...
+	
 	private void buildUI()
 	{		
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -98,7 +102,7 @@ public class WizardPageRegistration extends WizardPage
 		};
 			
 		WizardModel model = wizard.getModel();
-		Rectangle rect = model.referenceImage.getRoi().getBounds();
+		Rectangle rect = model.getReferenceImage().getRoi().getBounds();
 		worker = new RegistrationSwingWorker(model.getInputFiles(), model.getOutputFolder(), rect, maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(), progressBar, whenDone);
 		
 		// Run the registration on a separate worker thread and return here immediately.

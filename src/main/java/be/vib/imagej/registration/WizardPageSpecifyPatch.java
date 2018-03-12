@@ -16,6 +16,8 @@ public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 		super(wizard, name);		
 		buildUI();
 	}
+	
+	// TODO: provide feedback on reference patch size and location so we can exactly reproduce a registration afterwards
 
 	private void buildUI()
 	{		
@@ -30,7 +32,7 @@ public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 		if (img == null)
 			return;
 		
-		if (img != wizard.getModel().referenceImage)
+		if (img != wizard.getModel().getReferenceImage())
 			return;  // We're not interested in ROI changes for an image that is not our reference image
 						
 		assert(SwingUtilities.isEventDispatchThread());
@@ -80,13 +82,13 @@ public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 			infoLabel.setText("The selected ROI will be used for registering the images.");
 		else
 			infoLabel.setText("Please select a ROI that can be used for registering the images.");
-		
+	
 		wizard.updateButtons();
 	}
 	
 	private boolean haveReferenceImageWithRoi()
 	{
-		ImagePlus image = wizard.getModel().referenceImage;
+		ImagePlus image = wizard.getModel().getReferenceImage();
 		return image != null && image.getRoi() != null && !image.getRoi().getBounds().isEmpty();
 	}
 	

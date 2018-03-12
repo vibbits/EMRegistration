@@ -1,16 +1,10 @@
 package be.vib.imagej.registration;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -22,7 +16,7 @@ import ij.ImagePlus;
 import ij.io.Opener;
 
 @SuppressWarnings("serial")
-public class WizardPageSelectFolders extends WizardPage implements ActionListener
+public class WizardPageSelectFolders extends WizardPage
 {		
 	private JLabel inputFolderLabel;
 	private JLabel outputFolderLabel;
@@ -35,14 +29,7 @@ public class WizardPageSelectFolders extends WizardPage implements ActionListene
 			
 	public WizardPageSelectFolders(Wizard wizard, String name)
 	{
-		super(wizard, name);
-		
-		// BEGIN FIXME
-		wizard.getModel().setInputFolder(Paths.get("E:\\Datasets\\EM\\HPF\\2018_02_05_DEV_INWchem_cellMK\\Raw_Data_Cropped"));
-		wizard.getModel().setOutputFolder(Paths.get("E:\\Datasets\\EM\\HPF\\2018_02_05_DEV_INWchem_cellMK\\Out"));
-		wizard.getModel().setInputFiles(getFiles(wizard.getModel().getInputFolder()));
-		// END FIXME
-
+		super(wizard, name);		
 		buildUI();
 	}
 	
@@ -60,23 +47,35 @@ public class WizardPageSelectFolders extends WizardPage implements ActionListene
 		// TODO? add some kind of file filter on the input folder; it often contains a couple of non-tiff files that must be ignored
 		// TODO? add info/error label to inform the user that e.g. the input directory exists but is empty
 		// TODO: make directory fields editable
-		// TODO: remember last input and output folders
-		// TODO: make sure that file selector opens in the directory that was specified previously (when opening closing it multiple times)
+// TODO: remember last input and output folders - use ImageJ prefs
+// TODO: make sure that file selector opens in the directory that was specified previously (when opening closing it multiple times)
 		
 		inputFolderLabel = new JLabel("Input folder:");
 		outputFolderLabel = new JLabel("Output folder:");
 		
-		inputFolderField = new JTextField(getPathString(wizard.getModel().getInputFolder()));
-		outputFolderField = new JTextField(getPathString(wizard.getModel().getOutputFolder()));
-		
+		inputFolderField = new JTextField();
 		inputFolderField.setEditable(false);
+		
+		outputFolderField = new JTextField();		
 		outputFolderField.setEditable(false);
 		
 		inputFolderButton = new JButton("Select...");
-		inputFolderButton.addActionListener(this);
+		inputFolderButton.addActionListener(e -> {
+			Path folder = showFolderChooser(wizard.getModel().getInputFolder());
+			if (folder == null) return;
+			inputFolderField.setText(folder.toString());			
+			wizard.getModel().setInputFolder(folder);
+			wizard.updateButtons();			
+		});
 		
 		outputFolderButton = new JButton("Select...");
-		outputFolderButton.addActionListener(this);
+		outputFolderButton.addActionListener(e -> {
+			Path folder = showFolderChooser(wizard.getModel().getOutputFolder());	
+			if (folder == null) return;
+			outputFolderField.setText(folder.toString());			
+			wizard.getModel().setOutputFolder(folder);
+			wizard.updateButtons();			
+		});
 						
 		GroupLayout layout = new GroupLayout(this);
 		layout.setAutoCreateGaps(true);
@@ -109,59 +108,24 @@ public class WizardPageSelectFolders extends WizardPage implements ActionListene
 		setLayout(layout);
 	}
 
-	public void actionPerformed(ActionEvent e)
+	private Path showFolderChooser(Path defaultFolder)
 	{
-		if (e.getSource() != inputFolderButton && e.getSource() != outputFolderButton)
-			return;
-		
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fileChooser.setCurrentDirectory(defaultFolder.toFile());
 
 		int result = fileChooser.showOpenDialog(this);
 		if (result != JFileChooser.APPROVE_OPTION)
-			return;
+			return null;
 		
 		File file = fileChooser.getSelectedFile();
-		Path path = file.toPath();
-		
-    	WizardModel model = wizard.getModel(); 	    	
-		if (e.getSource() == inputFolderButton)
-		{
-			inputFolderField.setText(path.toString());
-			
-			model.setInputFolder(path);
-			model.setInputFiles(getFiles(path));			
-		}
-		else
-		{
-			outputFolderField.setText(path.toString());
-			model.setOutputFolder(path);
-		}
-		
-		// Check if we can move to the next page
-		// in the wizard and enable buttons accordingly.
-		wizard.updateButtons();
+		return file.toPath();
 	}
 
-	private List<Path> getFiles(Path folder)
-	{		
-		List<Path> paths = new ArrayList<Path>();
-		
-		try
-		{
-			paths = Files.walk(folder, 1)
-			        .filter(Files::isRegularFile)
-			        .collect(Collectors.toList());
-		}
-		catch (IOException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		paths.forEach(System.out::println);
-
-		return paths;
-	}
+	@Override
+	public void arriveFromPreviousPage()
+	{
+		setupPage();
+	}	
 	
 	@Override
 	public void goingToNextPage() 
@@ -177,13 +141,13 @@ public class WizardPageSelectFolders extends WizardPage implements ActionListene
 		Path firstSliceName = files.get(0);
 		System.out.println("First slice assumed to be " + firstSliceName);
 
-		// Open that slice as an image so the user can then select the template for registration
+		// Open that slice as an image so the user can then select the patch for registration
 		// in the next wizard page.
 		//image = (imageTitle != null) ? ij.WindowManager.getImage(imageTitle) : null;
 		Opener opener = new Opener();  
 		ImagePlus imp = opener.openImage(firstSliceName.toString());
 		
-		wizard.getModel().referenceImage = imp;
+		wizard.getModel().setReferenceImage(imp);
 		// FIXME: Lock the reference image so the user cannot close it while we are busy registering.
 				
 		imp.show();
@@ -199,5 +163,11 @@ public class WizardPageSelectFolders extends WizardPage implements ActionListene
     	Path input = model.getInputFolder();
         Path output = model.getOutputFolder();
 		return input != null && output != null && Files.exists(input) && Files.exists(output) && !model.getInputFiles().isEmpty();
+	}
+	
+	private void setupPage()
+	{
+		inputFolderField.setText(getPathString(wizard.getModel().getInputFolder()));
+		outputFolderField.setText(getPathString(wizard.getModel().getOutputFolder()));		
 	}
 }
