@@ -31,13 +31,12 @@ public class RegistrationEngine
 	
 	public void register(List<Path> inputFiles, Path outputFolder, Rectangle rect, int maxShiftX, int maxShiftY)
 	{
-		System.out.println("Maximum shift in pixels: X=" + maxShiftX + " Y=" + maxShiftY);
-		
 		// ImageJ image opener object
 		Opener opener = new Opener();  
 		
 		// Show info on reference patch
 		System.out.println(String.format("Reference patch: top-left corner x=%d y=%d, width=%d height=%d", rect.x, rect.y, rect.width, rect.height));
+		System.out.println("Maximum shift in pixels: X=" + maxShiftX + " Y=" + maxShiftY);		
 
 		// Coordinates of the top-left corner of the reference patch in the original image.
 		final int initialX = rect.x;
@@ -114,7 +113,7 @@ public class RegistrationEngine
 			int shiftX = bestPosX - initialX;
 			int shiftY = bestPosY - initialY;
 			image.translate(-shiftX, -shiftY);
-			System.out.println("Shift: X=" + shiftX + " Y=" + shiftY);
+			System.out.println("Shift: dx=" + shiftX + " dy=" + shiftY + " compared to first slice; dx=" + (bestPosX - prevX) +" dy=" + (bestPosY - prevY) + " compared to previous slice");
 			
 			// Update the most recent position of the best matching patch,
 			// we use its position as an estimate for the location of the patch in the next image.

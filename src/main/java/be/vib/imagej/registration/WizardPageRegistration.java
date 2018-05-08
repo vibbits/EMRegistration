@@ -3,10 +3,12 @@ package be.vib.imagej.registration;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
 @SuppressWarnings("serial")
@@ -37,8 +39,8 @@ public class WizardPageRegistration extends WizardPage
 	{		
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		
-		startButton = new JButton("Start Registration");
-		cancelButton = new JButton("Cancel Registration");
+		startButton = new JButton("Start");
+		cancelButton = new JButton("Cancel");
 		
 		statusLabel = new JLabel();
 		
@@ -58,15 +60,20 @@ public class WizardPageRegistration extends WizardPage
 		startButton.setAlignmentX(CENTER_ALIGNMENT);
 		cancelButton.setAlignmentX(CENTER_ALIGNMENT);
 		statusLabel.setAlignmentX(CENTER_ALIGNMENT);
-		
+				
+		JPanel registrationPanel = new JPanel();
+		registrationPanel.setLayout(new BoxLayout(registrationPanel, BoxLayout.Y_AXIS));
+		registrationPanel.setBorder(BorderFactory.createTitledBorder("Registration"));
+		registrationPanel.add(startButton);
+		registrationPanel.add(progressBar);
+		registrationPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+		registrationPanel.add(statusLabel);
+		registrationPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+		registrationPanel.add(cancelButton);
+				
 		add(maxShiftPanel);
-		add(Box.createRigidArea(new Dimension(0, 10)));
-		add(startButton);
-		add(progressBar);
-		add(Box.createRigidArea(new Dimension(0, 10)));
-		add(statusLabel);
-		add(Box.createRigidArea(new Dimension(0, 10)));
-		add(cancelButton);
+//		add(Box.createRigidArea(new Dimension(0, 10)));
+		add(registrationPanel);
 		add(Box.createVerticalGlue());
 
 		setReadyToRegister();

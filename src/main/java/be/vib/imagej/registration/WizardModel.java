@@ -96,8 +96,6 @@ public class WizardModel
 			e.printStackTrace();
 		}
 		
-		paths.forEach(System.out::println);
-
 		return paths;
 	}
 }
