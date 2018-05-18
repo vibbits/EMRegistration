@@ -2,6 +2,8 @@ package be.vib.imagej.registration;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.nio.file.Path;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -15,6 +17,7 @@ import javax.swing.JProgressBar;
 public class WizardPageRegistration extends WizardPage
 {		
 	private MaxShiftPanel maxShiftPanel;
+	private SliceThicknessCorrectionPanel sliceThicknessCorrectionPanel;
 	private JButton startButton;
 	private JButton cancelButton;
 	private JLabel statusLabel;
@@ -30,6 +33,7 @@ public class WizardPageRegistration extends WizardPage
 
 	// TODO: after registration, report on max shift in X and Y;
 	//       this may help the user gain some intuition on how large these shifts typically are.
+	// TODO? while registering, make a plot of the X and Y shifts?
 	
 	// TODO: log/print the exact registration parameters: max shift x & y, reference patch size, and reference patch location;
 	
@@ -39,7 +43,7 @@ public class WizardPageRegistration extends WizardPage
 	{		
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		
-		startButton = new JButton("Start");
+		startButton = new JButton("Start Registration");
 		cancelButton = new JButton("Cancel");
 		
 		statusLabel = new JLabel();
@@ -55,7 +59,8 @@ public class WizardPageRegistration extends WizardPage
 		});
 		
 		maxShiftPanel = new MaxShiftPanel();
-		maxShiftPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, maxShiftPanel.getMaximumSize().height));
+	
+		sliceThicknessCorrectionPanel = new SliceThicknessCorrectionPanel();
 	
 		startButton.setAlignmentX(CENTER_ALIGNMENT);
 		cancelButton.setAlignmentX(CENTER_ALIGNMENT);
@@ -71,7 +76,14 @@ public class WizardPageRegistration extends WizardPage
 		registrationPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 		registrationPanel.add(cancelButton);
 				
+		// Make sure all sub-panels fill the window horizontally.
+		// (It there no cleaner way to accomplish this?)
+		maxShiftPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, maxShiftPanel.getMaximumSize().height));
+		sliceThicknessCorrectionPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, sliceThicknessCorrectionPanel.getMaximumSize().height));
+		registrationPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, registrationPanel.getMaximumSize().height));
+
 		add(maxShiftPanel);
+		add(sliceThicknessCorrectionPanel);
 //		add(Box.createRigidArea(new Dimension(0, 10)));
 		add(registrationPanel);
 		add(Box.createVerticalGlue());
@@ -110,7 +122,10 @@ public class WizardPageRegistration extends WizardPage
 			
 		WizardModel model = wizard.getModel();
 		Rectangle rect = model.getReferenceImage().getRoi().getBounds();
-		worker = new RegistrationSwingWorker(model.getInputFiles(), model.getOutputFolder(), rect, maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(), progressBar, whenDone);
+		
+		RegistrationParameters parameters = new RegistrationParameters(model.getInputFiles(), model.getOutputFolder(), rect, maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(), sliceThicknessCorrectionPanel.thicknessCorrection(), 1000.0 * sliceThicknessCorrectionPanel.thicknessNM());
+
+		worker = new RegistrationSwingWorker(parameters, progressBar, whenDone);
 		
 		// Run the registration on a separate worker thread and return here immediately.
 		// Once registration has completed, the worker will automatically update the user interface to indicate this.

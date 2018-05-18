@@ -38,7 +38,7 @@ public class WizardPageInitializeQuasar extends WizardPage
 			wizard.updateButtons();
 		};
 
-		QuasarInitializationSwingWorker worker = new QuasarInitializationSwingWorker("cuda", onSuccess, onFailure);
+		QuasarInitializationSwingWorker worker = new QuasarInitializationSwingWorker(onSuccess, onFailure);
 		worker.execute();		
 	}
 	

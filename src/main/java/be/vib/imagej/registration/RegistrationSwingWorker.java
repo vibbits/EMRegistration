@@ -1,6 +1,5 @@
 package be.vib.imagej.registration;
 
-import java.awt.Rectangle;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -9,11 +8,7 @@ import javax.swing.SwingWorker;
 
 public class RegistrationSwingWorker extends SwingWorker<Void, Integer>
 {
-	private List<Path> inputFiles;
-	private Path outputFolder;
-	private Rectangle rect;
-	private int maxShiftX;
-	private int maxShiftY;
+	private RegistrationParameters params;
 	private JProgressBar progressBar;
 	private Runnable whenDone;  // Will be run on the EDT as soon as the RegistrationSwingWorker is done registering. Can be used to indicate in the UI that we are done.
 	
@@ -43,13 +38,9 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Integer>
 		}
 	}
 	
-	public RegistrationSwingWorker(List<Path> inputFiles, Path outputFolder, Rectangle rect, int maxShiftX, int maxShiftY, JProgressBar progressBar, Runnable whenDone)
+	public RegistrationSwingWorker(RegistrationParameters params, JProgressBar progressBar, Runnable whenDone)
 	{
-		this.inputFiles = inputFiles;
-		this.outputFolder = outputFolder;
-		this.rect = rect;
-		this.maxShiftX = maxShiftX;
-		this.maxShiftY = maxShiftY;
+		this.params = params;
 		this.progressBar = progressBar;
 		this.whenDone = whenDone;
 	}
@@ -60,8 +51,21 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Integer>
 		// The method doInBackground is run is a thread different from the Java Event Dispatch Thread (EDT).
 		// Do not update Java Swing components here.
 		
+		List<Path> slices = null;
+		
+		if (params.sliceThicknessCorrection)
+		{
+			ResampleInfo[] resampleInfo = SliceThicknessCorrection.nearestNeighborResample(params.inputFiles, params.sliceThickness);
+			SliceThicknessCorrection.printResampleInfo(resampleInfo);
+			slices = SliceThicknessCorrection.getResampledFiles(resampleInfo);
+		}
+		else
+		{
+			slices = params.inputFiles;
+		}
+		
 		RegistrationEngine engine = new SwingRegistrationEngine();
-		engine.register(inputFiles, outputFolder, rect, maxShiftX, maxShiftY);
+		engine.register(slices, params.outputFolder, params.rect, params.maxShiftX, params.maxShiftY);
 		return null;
 	}
 	

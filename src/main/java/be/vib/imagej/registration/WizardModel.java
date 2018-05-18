@@ -30,6 +30,8 @@ public class WizardModel
 	{
 		this.inputFolder = Paths.get(Prefs.get(keyPrefInputFolder, ""));
 		this.outputFolder = Paths.get(Prefs.get(keyPrefOutputFolder, ""));
+		this.inputFiles = null;  // we'll read the actual input files (there may be thousands in the input folder) when we actually need them
+		this.referenceImage = null;
 	}
 	
 	public void reset()
@@ -43,10 +45,13 @@ public class WizardModel
 
 	public void setInputFolder(Path inputFolder)
 	{
-		this.inputFolder = inputFolder;
-		Prefs.set(keyPrefInputFolder, inputFolder.toString());
-		
-		this.setInputFiles(getFiles(inputFolder));
+		if (inputFolder != this.inputFolder)
+		{
+			this.referenceImage = null;  // the input folder has changed, so the reference image (used for specifying the template region for registraion) must be reloaded too
+
+			this.inputFolder = inputFolder;
+			Prefs.set(keyPrefInputFolder, inputFolder.toString()); // FIXME: we probably do not want to do this if the folder does not exist?
+		}
 	}
 
 	public Path getOutputFolder()
@@ -59,15 +64,15 @@ public class WizardModel
 		this.outputFolder = outputFolder;
 		Prefs.set(keyPrefOutputFolder, outputFolder.toString());
 	}
+
+	public void scanInputFolder()
+	{
+		this.inputFiles = getFiles(inputFolder);  // inputFiles will be null if inputFolder does not exist or could not be enumerated
+	}
 	
 	public List<Path> getInputFiles()
 	{
 		return inputFiles;
-	}
-
-	private void setInputFiles(List<Path> inputFiles)
-	{
-		this.inputFiles = inputFiles;
 	}
 
 	public ImagePlus getReferenceImage()
@@ -80,22 +85,31 @@ public class WizardModel
 		this.referenceImage = referenceImage;
 	}
 	
-	private List<Path> getFiles(Path folder)  // TODO: what if folder does not exist? Should we let the throw the exception or return an empty list? Maybe throw the exception otherwise there is no wat to tell these 2 situations apart
-	{		
-		List<Path> paths = new ArrayList<Path>();
+	public void lockReferenceImage(boolean lock)
+	{
+		if (referenceImage == null)
+			return;
 		
+		if (lock && !referenceImage.isLocked())
+			referenceImage.lock();
+		else if (!lock && referenceImage.isLocked())
+			referenceImage.unlock();
+	}
+	
+	// TODO: maybe add a file filter (so we can exclude irrelevant files that happen to be in the folder too)
+	private List<Path> getFiles(Path folder)
+	{		
 		try
 		{
-			paths = Files.walk(folder, 1)
-			        .filter(Files::isRegularFile)
-			        .collect(Collectors.toList());
+			List<Path> paths = Files.walk(folder, 1)
+			                        .filter(Files::isRegularFile)
+			                        .collect(Collectors.toList());
+			return paths;
 		}
 		catch (IOException e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Caught exception " + e + " while walking folder " + folder);
+			return null;
 		}
-		
-		return paths;
 	}
 }
