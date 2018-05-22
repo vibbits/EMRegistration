@@ -1,8 +1,10 @@
 package be.vib.imagej.registration;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,9 +67,16 @@ public class WizardModel
 		Prefs.set(keyPrefOutputFolder, outputFolder.toString());
 	}
 
-	public void scanInputFolder()
+	public void scanInputFolder(String filePattern)
 	{
-		this.inputFiles = getFiles(inputFolder);  // inputFiles will be null if inputFolder does not exist or could not be enumerated
+		this.inputFiles = getFiles(inputFolder, filePattern);  // inputFiles will be null if inputFolder does not exist or could not be enumerated
+		
+		// Begin debugging
+		System.out.println("Input files:");
+		if (this.inputFiles != null)
+			for (Path path : this.inputFiles)
+				System.out.println(path.toString());
+		// End debugging
 	}
 	
 	public List<Path> getInputFiles()
@@ -96,13 +105,15 @@ public class WizardModel
 			referenceImage.unlock();
 	}
 	
-	// TODO: maybe add a file filter (so we can exclude irrelevant files that happen to be in the folder too)
-	private List<Path> getFiles(Path folder)
+	private List<Path> getFiles(Path folder, String filePattern)
 	{		
 		try
 		{
+			PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + filePattern);
+			
 			List<Path> paths = Files.walk(folder, 1)
 			                        .filter(Files::isRegularFile)
+			                        .filter(p -> matcher.matches(p.getFileName()))
 			                        .collect(Collectors.toList());
 			return paths;
 		}

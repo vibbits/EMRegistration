@@ -1,5 +1,6 @@
 package be.vib.imagej.registration;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.io.File;
 import java.nio.file.Files;
@@ -7,10 +8,13 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import ij.ImagePlus;
@@ -20,9 +24,10 @@ import ij.io.Opener;
 public class WizardPageSelectFolders extends WizardPage
 {		
 	private JLabel inputFolderLabel;
+	private JLabel inputFilePatternLabel;
 	private JLabel outputFolderLabel;
-//	private JLabel fileFilterLabel;
 	private JTextField inputFolderField;
+	private JTextField inputFilePatternField;
 	private JTextField outputFolderField;
 	private JButton inputFolderButton;
 	private JButton outputFolderButton;
@@ -49,17 +54,19 @@ public class WizardPageSelectFolders extends WizardPage
 	private void buildUI()
 	{		
 		// IMPROVEME: place a green check mark or a red cross next to the folder to indicate if the folder exists or not
-		// TODO? add some kind of file filter on the input folder; it often contains a couple of non-tiff files that must be ignored
 		// TODO: make the directory fields editable
 		
 		inputFolderLabel = new JLabel("Input folder:");
-		//fileFilterLabel = new JLabel("File filter:"); // TODO
+		inputFilePatternLabel = new JLabel("Input file pattern:");
 		outputFolderLabel = new JLabel("Output folder:");
 		
 		infoLabel = new JLabel("");
 		
 		inputFolderField = new JTextField();
 		inputFolderField.setEditable(false);
+		
+		inputFilePatternField = new JTextField("*.tif");
+		inputFilePatternField.setEditable(false); // TODO: make editable; if user moves out of the edit field then re-scan the input folder?
 		
 		outputFolderField = new JTextField();
 		outputFolderField.setEditable(false);
@@ -70,7 +77,7 @@ public class WizardPageSelectFolders extends WizardPage
 			if (folder == null) return;
 			inputFolderField.setText(folder.toString());			
 			wizard.getModel().setInputFolder(folder);
-			wizard.getModel().scanInputFolder();
+			wizard.getModel().scanInputFolder(inputFilePatternField.getText());
 			tryToLoadReferenceImage();
 			updateStatusIndicators();
 			wizard.updateButtons();			
@@ -97,16 +104,20 @@ public class WizardPageSelectFolders extends WizardPage
 		badOutputFolderLabel.setPreferredSize(crossDim);
 		badOutputFolderLabel.setMinimumSize(crossDim);
 		
-		GroupLayout layout = new GroupLayout(this);
+		JPanel foldersPanel = new JPanel();
+		
+		GroupLayout layout = new GroupLayout(foldersPanel);
 		layout.setAutoCreateGaps(true);
 		
 		layout.setHorizontalGroup(
 		   layout.createSequentialGroup()
 		      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
 			           .addComponent(inputFolderLabel)
+			           .addComponent(inputFilePatternLabel)
 			           .addComponent(outputFolderLabel))
 		      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, true)
 			           .addComponent(inputFolderField)
+			           .addComponent(inputFilePatternField)
 			           .addComponent(outputFolderField))
 		      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
 			           .addComponent(inputFolderButton)
@@ -124,13 +135,24 @@ public class WizardPageSelectFolders extends WizardPage
 					           .addComponent(inputFolderButton)
 					           .addComponent(badInputFolderLabel))
 				      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+				    		   .addComponent(inputFilePatternLabel)
+				    		   .addComponent(inputFilePatternField))
+				      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 				    		   .addComponent(outputFolderLabel)
 				    		   .addComponent(outputFolderField)
 					           .addComponent(outputFolderButton)
 					           .addComponent(badOutputFolderLabel))
 				      );  	
 		
-		setLayout(layout);
+		foldersPanel.setLayout(layout);
+		
+		foldersPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		
+		setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+		add(foldersPanel);
+		add(Box.createRigidArea(new Dimension(0, 20)));
+		add(infoLabel);
 	}
 
 	private Path showFolderChooser(Path defaultFolder)
@@ -212,9 +234,42 @@ public class WizardPageSelectFolders extends WizardPage
 	
 	private void updateStatusIndicators()
 	{
-		badInputFolderLabel.setVisible(!inputFolderGood());
-		badOutputFolderLabel.setVisible(!outputFolderGood());
-		System.out.println("Have reference image? " + (wizard.getModel().getReferenceImage() != null)); // TODO: update error/info label too: input folder does not exist, or it exists but has no input files.
+		final boolean inputFolderGood = inputFolderGood();
+		final boolean outputFolderGood = outputFolderGood();
+		final boolean haveReferenceImage = (wizard.getModel().getReferenceImage() != null);
+		
+		badInputFolderLabel.setVisible(!inputFolderGood);
+		badOutputFolderLabel.setVisible(!outputFolderGood);
+		
+		if (!inputFolderGood)
+		{
+			showInfoMessage("The input folder does not exist or cannot be read.");
+		}
+		else if (!haveReferenceImage)
+		{
+			showInfoMessage("Could not read a reference image in the input folder.");			
+		}
+		else if (!outputFolderGood)
+		{
+			showInfoMessage("The output folder does not exist.");			
+		}
+		else
+		{
+			showInfoMessage(null);			
+		}
+	}
+	
+	private void showInfoMessage(String message)
+	{
+		if (message == null)
+		{
+			infoLabel.setVisible(false);
+		}
+		else
+		{
+			infoLabel.setVisible(true);
+			infoLabel.setText(htmlAttention(message));
+		}
 	}
 	
 	private void setupPage()
@@ -222,9 +277,15 @@ public class WizardPageSelectFolders extends WizardPage
 		WizardModel model = wizard.getModel();
 		inputFolderField.setText(getPathString(model.getInputFolder()));
 		outputFolderField.setText(getPathString(model.getOutputFolder()));
-		model.scanInputFolder();
+		model.scanInputFolder(inputFilePatternField.getText());
 		tryToLoadReferenceImage();
 		updateStatusIndicators();
 		wizard.updateButtons();
+	}
+
+	// Wraps an ordinary text string in HTML for rendering it as red text. 
+	private static String htmlAttention(String s)
+	{
+		return "<html><font color=red>" + s + "</font></html>";
 	}
 }
