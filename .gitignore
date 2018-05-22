@@ -2,3 +2,4 @@
 /src/main/quasar/*.qlib
 /bin/
 /build/
+/src/main/quasar_old/
