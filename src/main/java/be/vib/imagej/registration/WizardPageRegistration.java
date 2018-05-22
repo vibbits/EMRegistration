@@ -2,8 +2,6 @@ package be.vib.imagej.registration;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
-import java.nio.file.Path;
-import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -102,6 +100,7 @@ public class WizardPageRegistration extends WizardPage
 		cancelButton.setVisible(true);
 				
 		maxShiftPanel.setEditable(false);
+		sliceThicknessCorrectionPanel.setEditable(false);
 
 		statusLabel.setText("Registering...");
 		statusLabel.setVisible(true);
@@ -151,6 +150,7 @@ public class WizardPageRegistration extends WizardPage
 	private void setReadyToRegister()
 	{
 		maxShiftPanel.setEditable(true);
+		sliceThicknessCorrectionPanel.setEditable(true);
 		startButton.setVisible(true);
 		cancelButton.setVisible(false);
 		progressBar.setVisible(false);

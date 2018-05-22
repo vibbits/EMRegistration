@@ -32,12 +32,12 @@ class MaxShiftPanel extends JPanel
 			
 		fieldX = new JFormattedTextField(formatter);		
 		fieldX.setValue(new Integer(maxShiftX));
-		fieldX.setColumns(5);
+		fieldX.setColumns(3);
 		fieldX.addPropertyChangeListener("value", e -> { maxShiftX = ((Number)fieldX.getValue()).intValue(); });
 		
 		fieldY = new JFormattedTextField(formatter);		
 		fieldY.setValue(new Integer(maxShiftY));
-		fieldY.setColumns(5);
+		fieldY.setColumns(3);
 		fieldY.addPropertyChangeListener("value", e -> { maxShiftY = ((Number)fieldY.getValue()).intValue(); });
 		
 		JLabel labelX = new JLabel("X:");

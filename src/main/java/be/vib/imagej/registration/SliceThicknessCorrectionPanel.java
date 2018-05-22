@@ -16,6 +16,8 @@ class SliceThicknessCorrectionPanel extends JPanel
 	
 	private JCheckBox thicknessCorrectionCheckbox;
 	private JFormattedTextField thicknessField;
+	private JLabel thicknessLabel;
+	private JLabel thicknessUnits;
 	
 	private double thicknessNM; // in nanometer; only valid if thicknessCorrection==true
 	private boolean thicknessCorrection;
@@ -34,44 +36,48 @@ class SliceThicknessCorrectionPanel extends JPanel
 
 		thicknessField = new JFormattedTextField(formatter);		
 		thicknessField.setValue(new Double(defaultThicknessNM));  
-		thicknessField.setColumns(5);
+		thicknessField.setColumns(3);
 		thicknessField.addPropertyChangeListener("value", e -> { thicknessNM = ((Number)thicknessField.getValue()).doubleValue(); });
 		
-		JLabel thicknessLabel = new JLabel("Slice thickness:");		
-		JLabel thicknessUnits = new JLabel("nm");
+		thicknessLabel = new JLabel("Slice thickness:");		
+		thicknessUnits = new JLabel("nm");
 		
 		thicknessCorrectionCheckbox = new JCheckBox("Correct for slice thickness variation");
-		thicknessCorrectionCheckbox.addPropertyChangeListener("value", e -> { thicknessCorrection = thicknessCorrectionCheckbox.isSelected(); });
+		thicknessCorrectionCheckbox.addActionListener(e -> { thicknessCorrection = thicknessCorrectionCheckbox.isSelected(); EnableSliceThicknessControls(thicknessCorrection);  });
+		
+		EnableSliceThicknessControls(thicknessCorrection);
 		
 		GroupLayout layout = new GroupLayout(this);
 		layout.setAutoCreateGaps(true);
 		layout.setAutoCreateContainerGaps(true);
 
 		layout.setHorizontalGroup(
-		   layout.createSequentialGroup()
-		      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-			           .addComponent(thicknessCorrectionCheckbox)
-		      		   .addComponent(thicknessLabel))
-		      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, false) // FIXME: alignment is wrong
-		      		   .addComponent(thicknessField))
-		      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, true)
-		      		   .addComponent(thicknessUnits))
-		      );
+			layout.createSequentialGroup()
+		    	.addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+		    				.addComponent(thicknessCorrectionCheckbox)
+		    				.addGroup(layout.createSequentialGroup()
+		    							.addComponent(thicknessLabel)
+		    							.addComponent(thicknessField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE) // do not let edit field use all available horizontal space
+		    							.addComponent(thicknessUnits))));
 		
 		layout.setVerticalGroup(
-		   layout.createSequentialGroup()
-		      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-		    		   .addComponent(thicknessCorrectionCheckbox))
- 		      .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-		    		   .addComponent(thicknessLabel)
-		    		   .addComponent(thicknessField)
-		    		   .addComponent(thicknessUnits))
-		);		
+			layout.createSequentialGroup()
+				.addComponent(thicknessCorrectionCheckbox)
+				.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+							.addComponent(thicknessLabel)
+							.addComponent(thicknessField)
+							.addComponent(thicknessUnits)));		
 		
 		setLayout(layout);
 	}
 	
-
+	private void EnableSliceThicknessControls(boolean enable)
+	{
+		thicknessLabel.setEnabled(enable);
+		thicknessField.setEnabled(enable);
+		thicknessUnits.setEnabled(enable);
+	}
+	
 	public double thicknessNM()
 	{
 		return thicknessNM;
