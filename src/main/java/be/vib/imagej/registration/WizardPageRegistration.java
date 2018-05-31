@@ -105,8 +105,8 @@ public class WizardPageRegistration extends WizardPage
 		statusLabel.setText("Registering...");
 		statusLabel.setVisible(true);
 		
-		progressBar.setMinimum(0);    // progress will be mapped by DenoiseSwingWorker to a value in [0, 100]
-		progressBar.setMaximum(100);
+		progressBar.setMinimum(0);
+		progressBar.setMaximum(RegistrationSwingWorker.progressBarScaleFactor * 100);
 		progressBar.setValue(0);
 		progressBar.setString("0.0%");
 		progressBar.setStringPainted(true); // show percentage progress as text in the progress bar

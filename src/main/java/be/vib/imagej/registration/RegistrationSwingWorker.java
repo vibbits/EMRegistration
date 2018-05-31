@@ -12,6 +12,11 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 	private JProgressBar progressBar;
 	private Runnable whenDone;  // Will be run on the EDT as soon as the RegistrationSwingWorker is done registering. Can be used to indicate in the UI that we are done.
 	
+	// The progressbar accepts values from 0 - 1000 (for 0 to 100%)
+	// but with 10x accuracy so the progressbar also moves if we only make 0.1% progress,
+	// which is common because we typically process stacks with hundreds of files)
+	public static final int progressBarScaleFactor = 10;
+	
 	private class SwingRegistrationEngine extends RegistrationEngine  // CHECKME: can we get rid of the SwingRegistrationEngine class?
 	{
 		SwingRegistrationEngine()
@@ -77,9 +82,10 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 	protected void process(List<Double> percentages)
 	{
 		// Method process() is executed on the Java EDT, so we can update the UI here.	
+		
 		for (Double percentage : percentages)
 		{
-			progressBar.setValue(percentage.intValue());
+			progressBar.setValue((int)(progressBarScaleFactor * percentage));
 			progressBar.setString(String.format("%.1f%%",percentage));
 		}
 	}
