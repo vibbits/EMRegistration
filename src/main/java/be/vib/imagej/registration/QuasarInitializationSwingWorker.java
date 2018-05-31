@@ -21,6 +21,7 @@ public class QuasarInitializationSwingWorker extends SwingWorker<Void, Void>
 	@Override
 	public Void doInBackground() throws InterruptedException, ExecutionException
 	{	
+		System.out.println("Fiji Quasar path=" + getFijiQuasarPath());
 		JavaQuasarBridge.startQuasar("cuda", false); // throws a RuntimeException on failure - if so it gets wrapped as an ExecutionException and caught in done()	
 		JavaQuasarBridge.extractAndLoadModule("be.vib.imagej.registration.QuasarInitializationSwingWorker", "qlib/registration.qlib", "registration.qlib", "vib_em_registration_");
 		JavaQuasarBridge.setQuasarPath(getFijiQuasarPath());

@@ -2,6 +2,8 @@ package be.vib.imagej.registration;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -13,10 +15,22 @@ import java.util.stream.Stream;
 
 public class SliceThicknessCorrection
 {
-	public static ResampleInfo[] nearestNeighborResample(List<Path> inputFiles, double dz) // dz in micrometers
+	static public class Pair
+	{
+		public Path path;
+		public double z;  // in micrometers
+		
+		Pair(Path path, double z)
+		{
+			this.path = path;
+			this.z = z;
+		}
+	}
+	
+	public static ResampleInfo[] nearestNeighborResample(List<Path> inputFiles, double sliceThicknessNM) // sliceThicknessNM in nanometers
 	{
 		// Extract the z-postion that is encoded in the filenames 
-		SortedMap<Path, Double> slices = parseFilenames(inputFiles);
+		ArrayList<Pair> slices = parseFilenames(inputFiles);
 		// TODO: what if this fails? error thrown?
 		
 		// Slice positions do *not* always increase strictly monotonically.
@@ -28,7 +42,7 @@ public class SliceThicknessCorrection
 			slices = sortByMonotonicallyIncreasingZ(slices);
 		}
 				
-		ResampleInfo[] resampleInfo = doNearestNeighborResampling(slices, dz);
+		ResampleInfo[] resampleInfo = doNearestNeighborResampling(slices, sliceThicknessNM);
 		return resampleInfo;
 	}
 	
@@ -49,15 +63,16 @@ public class SliceThicknessCorrection
 			System.out.println(info.desiredZ + " -> " + info.originalZ + " -> " + info.originalFilename);
 		}
 	}
-
-	private static ResampleInfo[] doNearestNeighborResampling(SortedMap<Path, Double> slices, double dz)
+	
+	private static ResampleInfo[] doNearestNeighborResampling(ArrayList<Pair> slices, double sliceThicknessNM)  // sliceThicknessNM in nanometers
 	{
-		final double zfirst = slices.get(slices.firstKey());
-		final double zlast = slices.get(slices.lastKey());;
+		final double dz = sliceThicknessNM / 1000.0;  // z and dz are in microns
+		final double zfirst = slices.get(0).z;
+		final double zlast = slices.get(slices.size()-1).z;
 		final int numResampledSlices = (int)((zlast - zfirst) / dz + dz / 2.0);
 		final int numOriginalSlices = slices.size();		
-		final Path[] originalPaths = (Path[])slices.keySet().toArray();
-		final Double[] originalZs = (Double[])slices.values().toArray();
+		
+		System.out.println("zfirst="+zfirst+" zlast=" + zlast + " numresampleslices=" + numResampledSlices + " numoriginalslices=" + numOriginalSlices);
 		
 		int indexNearestZ = 0;
 		ResampleInfo[] resampleInfo = new ResampleInfo[numResampledSlices];
@@ -69,15 +84,18 @@ public class SliceThicknessCorrection
 			double desiredZ = zfirst + i * dz;
 			
 			// Find the slice closest to our desired Z position.
-			while ((Math.abs(originalZs[indexNearestZ + 1] - desiredZ) < Math.abs(originalZs[indexNearestZ] - desiredZ)) && (indexNearestZ < numOriginalSlices - 1))
+			while ((Math.abs(slices.get(indexNearestZ + 1).z - desiredZ) < Math.abs(slices.get(indexNearestZ).z - desiredZ)) && (indexNearestZ < numOriginalSlices - 1))
 			{
 				indexNearestZ++;
 			}
 			
-			double nearestOriginalZ = originalZs[indexNearestZ];
+			double nearestOriginalZ = slices.get(indexNearestZ).z;
+			Path nearestOriginalPath = slices.get(indexNearestZ).path;
 			
 			// Remember the mapping between desired z position and nearest original slice.
-			resampleInfo[i] = new ResampleInfo(desiredZ, nearestOriginalZ, originalPaths[indexNearestZ]);
+			resampleInfo[i] = new ResampleInfo(desiredZ, nearestOriginalZ, nearestOriginalPath);
+
+			System.out.println("Resampled slice " + i + " at desired pos " + desiredZ + " has closest original slice at " + nearestOriginalZ + " (index " + indexNearestZ + ") path=" + nearestOriginalPath);
 		}
 		return resampleInfo;
 	}
@@ -86,7 +104,7 @@ public class SliceThicknessCorrection
 	// The key is the original Path of the file; the value
 	// is the z-position of the corresponding slice (in micrometers)
 	// as encoded in the filename.
-	private static SortedMap<Path, Double> parseFilenames(List<Path> inputFiles)
+	private static ArrayList<Pair> parseFilenames(List<Path> inputFiles)
 	{		
 		// We're assuming that the filenames always have this pattern:
 		//    prefix + "_" + slice number + "_" + "z=" + floating point number + "um" + ".tif"
@@ -94,7 +112,7 @@ public class SliceThicknessCorrection
 		String regex = ".*_(\\d+)_z=(\\d*\\.?\\d*)um\\.[^\\.]+";
 		Pattern pattern = Pattern.compile(regex);
 		
-		SortedMap<Path, Double> slices = new TreeMap<Path, Double>();
+		ArrayList<Pair> slices = new ArrayList<Pair>();
 		for (Path path : inputFiles)
 		{
 			Matcher m = pattern.matcher(path.toString());
@@ -105,7 +123,8 @@ public class SliceThicknessCorrection
 			String sliceZ = m.group(2);
 			
 			double z = Double.valueOf(sliceZ);
-			slices.put(path, z);
+			Pair pair = new Pair(path, z);
+			slices.add(pair);
 
 			System.out.println(sliceNumber + " " + sliceZ + " " + path.toString());			
 		}
@@ -119,12 +138,12 @@ public class SliceThicknessCorrection
 	// 
 	// TODO: note, in practice they are not monotonic :-(
 	//       see first few slices of F:\Datasets\EM Registration\Project_103_Patrizia\2018_03_16_P103_shPerk_bQ\Raw_data
-	private static boolean slicePositionsMonotonicallyIncreasing(SortedMap<Path, Double> slices)
+	private static boolean slicePositionsMonotonicallyIncreasing(ArrayList<Pair> slices)
 	{
 		double zprev = -1e9; // -infinity
-		for (Map.Entry<Path, Double> entry : slices.entrySet())
+		for (Pair p : slices)
 		{
-			double z = entry.getValue();
+			double z = p.z;
 			if (zprev >= z)
 				return false;
 			zprev = z;
@@ -132,13 +151,28 @@ public class SliceThicknessCorrection
 		return true;
 	}
 	
-	private static SortedMap<Path, Double> sortByMonotonicallyIncreasingZ(SortedMap<Path, Double> slices)
+	private static ArrayList<Pair> sortByMonotonicallyIncreasingZ(ArrayList<Pair> slices)
 	{
-		assert(false); // CHECK CODE BELOW
+		System.out.println("sortByMonotonicallyIncreasingZ");
+
+		System.out.println("before sorting:");
+		for (Pair p : slices)
+		{
+			System.out.println(p.z);
+		}
 		
-		TreeMap<Path, Double> sorted = slices.entrySet().stream()
-				                                        .sorted(Map.Entry.comparingByValue())
-				                                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, TreeMap::new));		
-		return sorted;
+//		LinkedHashMap<Path, Double> sorted = slices.entrySet().stream()
+//				                                        .sorted(Map.Entry.comparingByValue())
+//				                                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));		
+
+		slices.sort((o1, o2) -> Double.compare(o1.z, o2.z));
+		
+		System.out.println("after sorting:");
+		for (Pair p : slices)
+		{
+			System.out.println(p.z);
+		}
+		
+		return slices;
 	}
 }

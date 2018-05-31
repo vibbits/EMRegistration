@@ -1,0 +1,6 @@
+- Add estimated time till completion when registering
+- Add (auto?) crop of the large black border around the actual sample
+- Show more accurate percentage feedback (now we have hundreds of slices but on 1% accuracy, so even if we make progress the progress bar does not show it)
+- Better output filenames, we probably want it to have the sample position as well as the corresponding z position from the original filenames
+- Fix exception when entering an invalid input filename
+- ...

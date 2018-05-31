@@ -122,7 +122,7 @@ public class WizardPageRegistration extends WizardPage
 		WizardModel model = wizard.getModel();
 		Rectangle rect = model.getReferenceImage().getRoi().getBounds();
 		
-		RegistrationParameters parameters = new RegistrationParameters(model.getInputFiles(), model.getOutputFolder(), rect, maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(), sliceThicknessCorrectionPanel.thicknessCorrection(), 1000.0 * sliceThicknessCorrectionPanel.thicknessNM());
+		RegistrationParameters parameters = new RegistrationParameters(model.getInputFiles(), model.getOutputFolder(), rect, maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(), sliceThicknessCorrectionPanel.thicknessCorrection(), sliceThicknessCorrectionPanel.thicknessNM());
 
 		worker = new RegistrationSwingWorker(parameters, progressBar, whenDone);
 		

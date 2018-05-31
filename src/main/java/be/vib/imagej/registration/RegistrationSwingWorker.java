@@ -43,6 +43,8 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Integer>
 		this.params = params;
 		this.progressBar = progressBar;
 		this.whenDone = whenDone;
+		
+		System.out.println("RegistrationSwingWorker maxShiftX=" + params.maxShiftX + " sliceThicknessCorrection=" + params.sliceThicknessCorrection + " sliceThicknessNM=" + params.sliceThicknessNM);
 	}
 	
 	@Override
@@ -51,11 +53,13 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Integer>
 		// The method doInBackground is run is a thread different from the Java Event Dispatch Thread (EDT).
 		// Do not update Java Swing components here.
 		
+		// TODO: check what happens is an exception gets thrown here - it seems it gets "lost"?
+		
 		List<Path> slices = null;
 		
 		if (params.sliceThicknessCorrection)
 		{
-			ResampleInfo[] resampleInfo = SliceThicknessCorrection.nearestNeighborResample(params.inputFiles, params.sliceThickness);
+			ResampleInfo[] resampleInfo = SliceThicknessCorrection.nearestNeighborResample(params.inputFiles, params.sliceThicknessNM);
 			SliceThicknessCorrection.printResampleInfo(resampleInfo);
 			slices = SliceThicknessCorrection.getResampledFiles(resampleInfo);
 		}

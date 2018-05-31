@@ -19,8 +19,8 @@ class SliceThicknessCorrectionPanel extends JPanel
 	private JLabel thicknessLabel;
 	private JLabel thicknessUnits;
 	
-	private double thicknessNM; // in nanometer; only valid if thicknessCorrection==true
-	private boolean thicknessCorrection;
+	private double thicknessNM = defaultThicknessNM; // in nanometer; only valid if thicknessCorrection==true
+	private boolean thicknessCorrection = false;
 	
 	public SliceThicknessCorrectionPanel()
 	{		
@@ -35,7 +35,7 @@ class SliceThicknessCorrectionPanel extends JPanel
 		formatter.setMinimum(new Double(minimumThicknessNM));
 
 		thicknessField = new JFormattedTextField(formatter);		
-		thicknessField.setValue(new Double(defaultThicknessNM));  
+		thicknessField.setValue(new Double(thicknessNM));  
 		thicknessField.setColumns(3);
 		thicknessField.addPropertyChangeListener("value", e -> { thicknessNM = ((Number)thicknessField.getValue()).doubleValue(); });
 		
@@ -43,6 +43,7 @@ class SliceThicknessCorrectionPanel extends JPanel
 		thicknessUnits = new JLabel("nm");
 		
 		thicknessCorrectionCheckbox = new JCheckBox("Correct for slice thickness variation");
+		thicknessCorrectionCheckbox.setSelected(thicknessCorrection);
 		thicknessCorrectionCheckbox.addActionListener(e -> { thicknessCorrection = thicknessCorrectionCheckbox.isSelected(); EnableSliceThicknessControls(thicknessCorrection);  });
 		
 		EnableSliceThicknessControls(thicknessCorrection);

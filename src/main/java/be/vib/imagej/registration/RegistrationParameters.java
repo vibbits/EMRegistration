@@ -14,14 +14,16 @@ public class RegistrationParameters
 	public int maxShiftY;
 	
 	public boolean sliceThicknessCorrection;
-	public double sliceThickness;  // in microns; only relevant if sliceThicknessCorrection == true
+	public double sliceThicknessNM;  // in nanometers; only relevant if sliceThicknessCorrection == true
 	
-	public RegistrationParameters(List<Path> inputFiles, Path outputFolder, Rectangle rect, int maxShiftX, int maxShiftY, boolean sliceThicknessCorrection, double sliceThickness)
+	public RegistrationParameters(List<Path> inputFiles, Path outputFolder, Rectangle rect, int maxShiftX, int maxShiftY, boolean sliceThicknessCorrection, double sliceThicknessNM)
 	{
 		this.inputFiles = inputFiles;
 		this.outputFolder = outputFolder;
 		this.rect = rect;
 		this.maxShiftX = maxShiftX;
 		this.maxShiftY = maxShiftY;
+		this.sliceThicknessCorrection = sliceThicknessCorrection;
+		this.sliceThicknessNM = sliceThicknessNM;
 	}
 }

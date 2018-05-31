@@ -1,10 +1,15 @@
 package be.vib.imagej.registration;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,9 +21,11 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
 
 import ij.ImagePlus;
 import ij.io.Opener;
+import ij.plugin.Colors;
 
 @SuppressWarnings("serial")
 public class WizardPageSelectFolders extends WizardPage
@@ -36,7 +43,7 @@ public class WizardPageSelectFolders extends WizardPage
 	private JLabel infoLabel;   // used for displaying warning or error messages concerning the input/output folders
 	
 	private final JFileChooser fileChooser = new JFileChooser();
-			
+	
 	public WizardPageSelectFolders(Wizard wizard, String name)
 	{
 		super(wizard, name);		
@@ -50,11 +57,39 @@ public class WizardPageSelectFolders extends WizardPage
 		else
 			return path.toString();
 	}
+	
+	private void handleInputFolderChange(Path folder)
+	{
+		System.out.println("handleInputFolderChange: " + folder);
+		wizard.getModel().setInputFolder(folder);
+		inputFilePatternChangeImpl(inputFilePatternField.getText());
+	}
+	
+	private void handleOutputFolderChange(Path folder)
+	{
+		System.out.println("handleOutputFolderChanges: " + folder);
+		wizard.getModel().setOutputFolder(folder);
+		updateStatusIndicators();
+		wizard.updateButtons();		
+	}
+	
+	private void handleInputFilePatternChange(String pattern)
+	{
+		System.out.println("handleInputFilePatternChange: " + pattern);
+		inputFilePatternChangeImpl(pattern);
+	}
+	
+	private void inputFilePatternChangeImpl(String pattern)
+	{
+		wizard.getModel().scanInputFolder(inputFilePatternField.getText());
+		tryToLoadReferenceImage();
+		updateStatusIndicators();
+		wizard.updateButtons();			
+	}
 
 	private void buildUI()
 	{		
 		// IMPROVEME: place a green check mark or a red cross next to the folder to indicate if the folder exists or not
-		// TODO: make the directory fields editable
 		
 		inputFolderLabel = new JLabel("Input folder:");
 		inputFilePatternLabel = new JLabel("Input file pattern:");
@@ -63,41 +98,55 @@ public class WizardPageSelectFolders extends WizardPage
 		infoLabel = new JLabel("");
 		
 		inputFolderField = new JTextField();
-		inputFolderField.setEditable(false);
+		inputFolderField.getDocument().addDocumentListener(new DocumentListenerAdapter() {    // FIXME: when input folder is edited to some invalid folder (e.g. ending in a space) an exception is thrown :(
+			@Override
+			public void handleChange(DocumentEvent e)
+			{
+				System.out.println("handleChange: " + inputFilePatternField.getText());	
+				Path folder = Paths.get(inputFolderField.getText());
+				handleInputFolderChange(folder);
+			}
+		});
 		
 		inputFilePatternField = new JTextField("*.tif");
-		inputFilePatternField.setEditable(false); // TODO: make editable; if user moves out of the edit field then re-scan the input folder?
+		inputFilePatternField.getDocument().addDocumentListener(new DocumentListenerAdapter() {
+			@Override
+			public void handleChange(DocumentEvent e)
+			{
+				System.out.println("handleChange: " + inputFilePatternField.getText());	
+				handleInputFilePatternChange(inputFilePatternField.getText());
+			}
+		});
 		
-		outputFolderField = new JTextField();
-		outputFolderField.setEditable(false);
+		outputFolderField = new JTextField();	
+		outputFolderField.getDocument().addDocumentListener(new DocumentListenerAdapter() {
+			@Override
+			public void handleChange(DocumentEvent e)
+			{
+				System.out.println("handleChange: " + inputFilePatternField.getText());	
+				Path folder = Paths.get(outputFolderField.getText());
+				handleOutputFolderChange(folder);
+			}
+		});
 		
 		inputFolderButton = new JButton("Select...");
 		inputFolderButton.addActionListener(e -> {
 			Path folder = showFolderChooser(wizard.getModel().getInputFolder());
 			if (folder == null) return;
-			inputFolderField.setText(folder.toString());			
-			wizard.getModel().setInputFolder(folder);
-			wizard.getModel().scanInputFolder(inputFilePatternField.getText());
-			tryToLoadReferenceImage();
-			updateStatusIndicators();
-			wizard.updateButtons();			
+			inputFolderField.setText(folder.toString());  // triggers a handleInputFolderChange
 		});
 		
 		outputFolderButton = new JButton("Select...");
 		outputFolderButton.addActionListener(e -> {
 			Path folder = showFolderChooser(wizard.getModel().getOutputFolder());	
 			if (folder == null) return;
-			outputFolderField.setText(folder.toString());	
-			wizard.getModel().setOutputFolder(folder);
-			updateStatusIndicators();
-			wizard.updateButtons();			
+			outputFolderField.setText(folder.toString());  // triggers a handleOutputFolderChange
 		});
 		
-		// TODO: red cross icon instead of "X"
-		badInputFolderLabel = new JLabel("X");
-		badOutputFolderLabel = new JLabel("X");
+		badInputFolderLabel = new JLabel();
+		badOutputFolderLabel = new JLabel();
 		
-		// TODO: avoid that input field becomes bigger if cross is hidden
+		// Avoid that input field becomes bigger if the status toggles between a cross and a checkmark
 		Dimension crossDim = new Dimension(20, 20);
 		badInputFolderLabel.setPreferredSize(crossDim);
 		badInputFolderLabel.setMinimumSize(crossDim);
@@ -238,8 +287,8 @@ public class WizardPageSelectFolders extends WizardPage
 		final boolean outputFolderGood = outputFolderGood();
 		final boolean haveReferenceImage = (wizard.getModel().getReferenceImage() != null);
 		
-		badInputFolderLabel.setVisible(!inputFolderGood);
-		badOutputFolderLabel.setVisible(!outputFolderGood);
+		setStatus(badInputFolderLabel, inputFolderGood);
+		setStatus(badOutputFolderLabel, outputFolderGood);
 		
 		if (!inputFolderGood)
 		{
@@ -247,7 +296,7 @@ public class WizardPageSelectFolders extends WizardPage
 		}
 		else if (!haveReferenceImage)
 		{
-			showInfoMessage("Could not read a reference image in the input folder.");			
+			showInfoMessage("Could not read a reference image in the input folder. Maybe the input folder is empty or none of the files match the input file pattern?");			
 		}
 		else if (!outputFolderGood)
 		{
@@ -257,6 +306,19 @@ public class WizardPageSelectFolders extends WizardPage
 		{
 			showInfoMessage(null);			
 		}
+	}
+	
+	private void setStatus(JLabel label, boolean good)
+	{
+		final String heavyCheckMark = "\u2714";
+		final String heavyBallotX = "\u2718";
+		
+		final Color green = Color.decode("#1e9906");
+		final Color red = Color.RED;
+		
+		label.setText(good ? heavyCheckMark : heavyBallotX);
+		label.setForeground(good ? green : red);	
+		label.setFont(new Font("Serif", Font.PLAIN, 16));
 	}
 	
 	private void showInfoMessage(String message)
