@@ -5,13 +5,11 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import ij.ImagePlus;
-import ij.Prefs;
 
 /**
  * WizardModel stores all model data for the wizard. It is shared by all wizard pages.
@@ -20,9 +18,6 @@ import ij.Prefs;
  */
 public class WizardModel
 {
-	private static final String keyPrefInputFolder = "be.vib.imagej.registration.inputFolder";
-	private static final String keyPrefOutputFolder = "be.vib.imagej.registration.outputFolder";
-	
 	private Path inputFolder;
 	private Path outputFolder;
 	private List<Path> inputFiles = new ArrayList<Path>();
@@ -30,8 +25,8 @@ public class WizardModel
 	
 	public WizardModel()
 	{
-		this.inputFolder = Paths.get(Prefs.get(keyPrefInputFolder, ""));
-		this.outputFolder = Paths.get(Prefs.get(keyPrefOutputFolder, ""));
+		this.inputFolder = null;
+		this.outputFolder = null;
 		this.inputFiles = null;  // we'll read the actual input files (there may be thousands in the input folder) when we actually need them
 		this.referenceImage = null;
 	}
@@ -40,31 +35,28 @@ public class WizardModel
 	{
 	}	
 
-	public Path getInputFolder()
+	public Path getInputFolder()  // may return null
 	{
 		return inputFolder;
 	}
 
-	public void setInputFolder(Path inputFolder)
+	public void setInputFolder(Path inputFolder)  // inputFolder may be null
 	{
 		if (inputFolder != this.inputFolder)
 		{
-			this.referenceImage = null;  // the input folder has changed, so the reference image (used for specifying the template region for registraion) must be reloaded too
-
 			this.inputFolder = inputFolder;
-			Prefs.set(keyPrefInputFolder, inputFolder.toString()); // FIXME: we probably do not want to do this if the folder does not exist?
+			this.referenceImage = null;  // the input folder has changed, so the reference image (used for specifying the template region for registration) must be reloaded too
 		}
 	}
 
-	public Path getOutputFolder()
+	public Path getOutputFolder()  // may return null
 	{
 		return outputFolder;
 	}
 
-	public void setOutputFolder(Path outputFolder)
+	public void setOutputFolder(Path outputFolder)  // outputFolder may be null
 	{
 		this.outputFolder = outputFolder;
-		Prefs.set(keyPrefOutputFolder, outputFolder.toString());
 	}
 
 	public void scanInputFolder(String filePattern)
@@ -79,7 +71,7 @@ public class WizardModel
 		// End debugging
 	}
 	
-	public List<Path> getInputFiles()
+	public List<Path> getInputFiles()  // may return null
 	{
 		return inputFiles;
 	}
@@ -106,7 +98,12 @@ public class WizardModel
 	}
 	
 	private List<Path> getFiles(Path folder, String filePattern)
-	{		
+	{	
+		if (folder == null)
+		{
+			return null;
+		}
+		
 		try
 		{
 			PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + filePattern);

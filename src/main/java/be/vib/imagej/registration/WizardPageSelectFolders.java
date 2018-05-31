@@ -4,12 +4,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,11 +22,14 @@ import javax.swing.event.DocumentEvent;
 
 import ij.ImagePlus;
 import ij.io.Opener;
-import ij.plugin.Colors;
+import ij.Prefs;
 
 @SuppressWarnings("serial")
 public class WizardPageSelectFolders extends WizardPage
 {		
+	private static final String keyPrefInputFolder = "be.vib.imagej.registration.inputFolder";
+	private static final String keyPrefOutputFolder = "be.vib.imagej.registration.outputFolder";
+
 	private JLabel inputFolderLabel;
 	private JLabel inputFilePatternLabel;
 	private JLabel outputFolderLabel;
@@ -50,24 +50,14 @@ public class WizardPageSelectFolders extends WizardPage
 		buildUI();
 	}
 	
-	private String getPathString(Path path)
-	{
-		if (path == null)
-			return "";
-		else
-			return path.toString();
-	}
-	
 	private void handleInputFolderChange(Path folder)
 	{
-		System.out.println("handleInputFolderChange: " + folder);
 		wizard.getModel().setInputFolder(folder);
 		inputFilePatternChangeImpl(inputFilePatternField.getText());
 	}
 	
 	private void handleOutputFolderChange(Path folder)
 	{
-		System.out.println("handleOutputFolderChanges: " + folder);
 		wizard.getModel().setOutputFolder(folder);
 		updateStatusIndicators();
 		wizard.updateButtons();		
@@ -75,7 +65,6 @@ public class WizardPageSelectFolders extends WizardPage
 	
 	private void handleInputFilePatternChange(String pattern)
 	{
-		System.out.println("handleInputFilePatternChange: " + pattern);
 		inputFilePatternChangeImpl(pattern);
 	}
 	
@@ -88,23 +77,34 @@ public class WizardPageSelectFolders extends WizardPage
 	}
 
 	private void buildUI()
-	{		
-		// IMPROVEME: place a green check mark or a red cross next to the folder to indicate if the folder exists or not
-		
+	{				
 		inputFolderLabel = new JLabel("Input folder:");
 		inputFilePatternLabel = new JLabel("Input file pattern:");
 		outputFolderLabel = new JLabel("Output folder:");
 		
 		infoLabel = new JLabel("");
 		
-		inputFolderField = new JTextField();
-		inputFolderField.getDocument().addDocumentListener(new DocumentListenerAdapter() {    // FIXME: when input folder is edited to some invalid folder (e.g. ending in a space) an exception is thrown :(
+		inputFolderField = new JTextField("");
+		inputFolderField.getDocument().addDocumentListener(new DocumentListenerAdapter() {
 			@Override
 			public void handleChange(DocumentEvent e)
 			{
-				System.out.println("handleChange: " + inputFilePatternField.getText());	
-				Path folder = Paths.get(inputFolderField.getText());
+				String inputFolderText = inputFolderField.getText();
+				Prefs.set(keyPrefInputFolder, inputFolderText);
+				Path folder = PathUtils.pathFromString(inputFolderText);
 				handleInputFolderChange(folder);
+			}
+		});
+		
+		outputFolderField = new JTextField("");	
+		outputFolderField.getDocument().addDocumentListener(new DocumentListenerAdapter() {
+			@Override
+			public void handleChange(DocumentEvent e)
+			{
+				String outputFolderText = outputFolderField.getText();
+				Prefs.set(keyPrefOutputFolder, outputFolderText);
+				Path folder = PathUtils.pathFromString(outputFolderText);
+				handleOutputFolderChange(folder);
 			}
 		});
 		
@@ -113,19 +113,7 @@ public class WizardPageSelectFolders extends WizardPage
 			@Override
 			public void handleChange(DocumentEvent e)
 			{
-				System.out.println("handleChange: " + inputFilePatternField.getText());	
 				handleInputFilePatternChange(inputFilePatternField.getText());
-			}
-		});
-		
-		outputFolderField = new JTextField();	
-		outputFolderField.getDocument().addDocumentListener(new DocumentListenerAdapter() {
-			@Override
-			public void handleChange(DocumentEvent e)
-			{
-				System.out.println("handleChange: " + inputFilePatternField.getText());	
-				Path folder = Paths.get(outputFolderField.getText());
-				handleOutputFolderChange(folder);
 			}
 		});
 		
@@ -202,12 +190,17 @@ public class WizardPageSelectFolders extends WizardPage
 		add(foldersPanel);
 		add(Box.createRigidArea(new Dimension(0, 20)));
 		add(infoLabel);
+		
+		// Set input and output folder based on saved ImageJ prefs
+		// (We set the Swing text field, which will trigger updates of the WizardModel.)
+		inputFolderField.setText(Prefs.get(keyPrefInputFolder, ""));
+		outputFolderField.setText(Prefs.get(keyPrefOutputFolder, ""));
 	}
 
 	private Path showFolderChooser(Path defaultFolder)
 	{
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		fileChooser.setCurrentDirectory(defaultFolder.toFile());
+		fileChooser.setCurrentDirectory(defaultFolder == null ? null : defaultFolder.toFile());
 
 		int result = fileChooser.showOpenDialog(this);
 		if (result != JFileChooser.APPROVE_OPTION)
@@ -277,7 +270,6 @@ public class WizardPageSelectFolders extends WizardPage
 	{
     	WizardModel model = wizard.getModel(); 	  
 		Path output = model.getOutputFolder();
-		assert(output != null);
 		return (output != null) && Files.exists(output);
 	}
 	
@@ -337,8 +329,8 @@ public class WizardPageSelectFolders extends WizardPage
 	private void setupPage()
 	{
 		WizardModel model = wizard.getModel();
-		inputFolderField.setText(getPathString(model.getInputFolder()));
-		outputFolderField.setText(getPathString(model.getOutputFolder()));
+		inputFolderField.setText(PathUtils.getPathString(model.getInputFolder()));
+		outputFolderField.setText(PathUtils.getPathString(model.getOutputFolder()));
 		model.scanInputFolder(inputFilePatternField.getText());
 		tryToLoadReferenceImage();
 		updateStatusIndicators();
