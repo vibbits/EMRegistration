@@ -6,7 +6,7 @@ import java.util.List;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
-public class RegistrationSwingWorker extends SwingWorker<Void, Integer>
+public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 {
 	private RegistrationParameters params;
 	private JProgressBar progressBar;
@@ -20,13 +20,13 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Integer>
 		}
 		
 		@Override 
-		public void publish(Integer... chunks )
+		public void publish(Double... chunks )
 		{
 			RegistrationSwingWorker.this.publish(chunks);
 		}
 		
 		@Override 
-		public void process(List<Integer> chunks)
+		public void process(List<Double> chunks)
 		{
 			RegistrationSwingWorker.this.process(chunks);
 		}
@@ -74,12 +74,13 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Integer>
 	}
 	
 	@Override
-	protected void process(List<Integer> percentages)
+	protected void process(List<Double> percentages)
 	{
 		// Method process() is executed on the Java EDT, so we can update the UI here.	
-		for (Integer percentage : percentages)
+		for (Double percentage : percentages)
 		{
-			progressBar.setValue(percentage);
+			progressBar.setValue(percentage.intValue());
+			progressBar.setString(String.format("%.1f%%",percentage));
 		}
 	}
 	

@@ -131,17 +131,17 @@ public class RegistrationEngine
 			printStatistics(loadStart, loadEnd, registerStart, registerEnd, saveStart, saveEnd);
 			
 			// Progress feedback
-			publish((100 * sliceNr) / numSlices);
+			publish((100.0 * sliceNr) / numSlices);
 			sliceNr++;
 		}
 	}
 	
-	public void publish(Integer... chunks)
+	public void publish(Double... chunks)
 	{
 		// Will be overridden
 	}
 	
-	public void process(List<Integer> percentages)
+	public void process(List<Double> percentages)
 	{
 		// Will be overridden
 	}
