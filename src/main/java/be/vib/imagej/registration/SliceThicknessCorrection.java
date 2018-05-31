@@ -84,7 +84,7 @@ public class SliceThicknessCorrection
 			double desiredZ = zfirst + i * dz;
 			
 			// Find the slice closest to our desired Z position.
-			while ((Math.abs(slices.get(indexNearestZ + 1).z - desiredZ) < Math.abs(slices.get(indexNearestZ).z - desiredZ)) && (indexNearestZ < numOriginalSlices - 1))
+			while ((Math.abs(slices.get(indexNearestZ).z - desiredZ) > Math.abs(slices.get(indexNearestZ + 1).z - desiredZ)) && (indexNearestZ < numOriginalSlices - 1))
 			{
 				indexNearestZ++;
 			}
@@ -161,10 +161,6 @@ public class SliceThicknessCorrection
 			System.out.println(p.z);
 		}
 		
-//		LinkedHashMap<Path, Double> sorted = slices.entrySet().stream()
-//				                                        .sorted(Map.Entry.comparingByValue())
-//				                                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));		
-
 		slices.sort((o1, o2) -> Double.compare(o1.z, o2.z));
 		
 		System.out.println("after sorting:");

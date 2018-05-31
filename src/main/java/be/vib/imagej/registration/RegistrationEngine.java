@@ -123,7 +123,7 @@ public class RegistrationEngine
 			// Save the registered image to the output folder			
 			saveStart = System.nanoTime();
 			FileSaver saver = new FileSaver(imagePlus);
-			Path resultPath = suggestOutputFilename(inputFile, outputFolder);
+			Path resultPath = suggestOutputFilename(sliceNr - 1, inputFile, outputFolder);
 			saver.saveAsTiff(resultPath.toString());
 			saveEnd = System.nanoTime();
 	
@@ -153,9 +153,14 @@ public class RegistrationEngine
 	}
 	
 	// Returns an output file path like this:
-	// desired output folder + original filename (without extension) + _registered + original extension (if any)
-	private Path suggestOutputFilename(Path inputFilePath, Path outputFolder)
+	// desired output folder + slice nr + original filename (without extension) + _registered + original extension (if any)
+	// FIXME - if we corrected for thickness, we probably want an indication of the sampled z and the closest original z (but we don't have that information available here)
+	//         (for now we added a counter prefix so that (1) if we correct for slice thickness and use the same input file multiple times, at least we get unique filenames;
+	//         and (2) if we re-order input files (because the input z's are not monotonically increasing, the registered output files reflect that different order!)
+	//         but this issue needs some more thought)
+	private Path suggestOutputFilename(int sliceNr, Path inputFilePath, Path outputFolder)
 	{
+		String prefix = String.format("%05d", sliceNr) + "_";
 		String suffix = "_registered";	
 		String filename = inputFilePath.getName(inputFilePath.getNameCount() - 1).toString(); // filename part only (including extension, if any)
 		
@@ -163,14 +168,14 @@ public class RegistrationEngine
 	    if (dotIndex == -1)
 	    {
 	    	// Original file has no extension, just append the suffix.
-	    	return Paths.get(outputFolder.toString(), filename + suffix);
+	    	return Paths.get(outputFolder.toString(), prefix + filename + suffix);
 	    }
 	    else
 	    {
 	    	// Original file has an extension, insert the suffix just before the extension in the original filename
 	    	String filenameWithoutExtension = filename.substring(0, dotIndex);
 	    	String extension = filename.substring(dotIndex);
-	    	return Paths.get(outputFolder.toString(), filenameWithoutExtension + suffix + extension);
+	    	return Paths.get(outputFolder.toString(), prefix + filenameWithoutExtension + suffix + extension);
 	    }
 	}
 	
