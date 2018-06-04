@@ -63,12 +63,12 @@ public class WizardModel
 	{
 		this.inputFiles = getFiles(inputFolder, filePattern);  // inputFiles will be null if inputFolder does not exist or could not be enumerated
 		
-		// Begin debugging
-		System.out.println("Input files:");
-		if (this.inputFiles != null)
-			for (Path path : this.inputFiles)
-				System.out.println(path.toString());
-		// End debugging
+//		// Begin debugging
+//		System.out.println("Input files:");
+//		if (this.inputFiles != null)
+//			for (Path path : this.inputFiles)
+//				System.out.println(path.toString());
+//		// End debugging
 	}
 	
 	public List<Path> getInputFiles()  // may return null
@@ -118,7 +118,6 @@ public class WizardModel
 		{
 			// (This exception typically occurs while the user is typing a folder name,
 			// before the folder name is typed in completely.)
-			System.out.println("Caught exception " + e + " while walking folder " + folder);
 			return null;
 		}
 	}
