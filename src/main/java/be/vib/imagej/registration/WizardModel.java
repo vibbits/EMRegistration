@@ -116,6 +116,8 @@ public class WizardModel
 		}
 		catch (IOException e)
 		{
+			// (This exception typically occurs while the user is typing a folder name,
+			// before the folder name is typed in completely.)
 			System.out.println("Caught exception " + e + " while walking folder " + folder);
 			return null;
 		}

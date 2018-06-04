@@ -1,5 +1,9 @@
 package be.vib.imagej.registration;
 
+import java.awt.Component;
+import java.awt.Rectangle;
+
+import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
@@ -10,6 +14,7 @@ import ij.gui.RoiListener;
 public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 {					
 	private JLabel infoLabel;
+	private JLabel roiLabel;
 	
 	public WizardPageSpecifyPatch(Wizard wizard, String name)
 	{
@@ -17,13 +22,19 @@ public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 		buildUI();
 	}
 	
-	// TODO: provide feedback on reference patch size and location so we can exactly reproduce a registration afterwards
-	// TODO: store reference patch size and location (and possible algorithm parameters) in metadata of the result, so we can reproduce/document the algorithm afterwards
-
 	private void buildUI()
 	{		
+		setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+
 		infoLabel = new JLabel();
+		roiLabel = new JLabel();
+
+		infoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		roiLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
 		add(infoLabel);
+		add(roiLabel);
+
 		handleChange();
 	}
 
@@ -80,9 +91,19 @@ public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 	private void handleChange()  // must be called on the Java Event Dispatch Thread (EDT)
 	{
 		if (haveReferenceImageWithRoi())
-			infoLabel.setText("The selected ROI will be used for registering the images.");
+		{
+			ImagePlus image = wizard.getModel().getReferenceImage();
+			Rectangle r = image.getRoi().getBounds();
+			
+			infoLabel.setText("The selected ROI will be used as a template patch for registering the images.");
+			roiLabel.setText("ROI: " + r.width + " x " + r.height + " pixels, top left corner at (" + r.x + ", " + r.y + ")");
+			roiLabel.setVisible(true);
+		}
 		else
+		{
 			infoLabel.setText("Please select a ROI that can be used for registering the images.");
+			roiLabel.setVisible(false);
+		}
 	
 		wizard.updateButtons();
 	}
