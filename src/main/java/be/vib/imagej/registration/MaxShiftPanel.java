@@ -22,7 +22,7 @@ class MaxShiftPanel extends JPanel
 
 	private void buildUI()
 	{
-		setBorder(BorderFactory.createTitledBorder("Maximum Shift"));
+		setBorder(BorderFactory.createTitledBorder("Maximum Image Shift"));
 		
 		// Only allow integer shifts from 0 to 100.
 		NumberFormatter formatter = new NumberFormatter();
