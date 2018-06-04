@@ -2,9 +2,6 @@ Showstopper:
 - (none)
 
 Must have:
-- Ability to reproduce a registration again later. For that the users needs access to all registration parameters (e.g. also the template rectangle coordinates) + the ability to specify them
-
-
 - Better output filenames, we probably want it to have the sample position as well as the corresponding z position from the original filenames
 - Fix problem with window showing the first slice when moving back and fro in the wizard (sometimes multiple windows get created, and it is possible but undesirable for the user to close that window).
 
