@@ -29,7 +29,7 @@ public class RegistrationWizardSingleton
 							   new WizardPageRegistration(wizard, "Registration") };
 		
 		wizard.build(pages);
-		wizard.setMinimumSize(new Dimension(650, 420)); // IMPROVEME: this ensures that WizardPageRegistration is tall enough, and WizardPageSelectFolders wide enough, enforce that there instead of here.
+		wizard.setMinimumSize(new Dimension(650, 500)); // IMPROVEME: this ensures that WizardPageRegistration is tall enough, and WizardPageSelectFolders wide enough, enforce that there instead of here.
 		wizard.pack();
 		wizard.moveToMiddleOfScreen();
 				

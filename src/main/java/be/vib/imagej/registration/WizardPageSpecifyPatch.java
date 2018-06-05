@@ -79,7 +79,16 @@ public class WizardPageSpecifyPatch extends WizardPage implements RoiListener
 	{
 		assert(SwingUtilities.isEventDispatchThread());	
 		ij.gui.Roi.addRoiListener(this);
-		handleChange();		
+		handleChange();
+		
+//		/// TEST TEST TEST
+//		ImagePlus image = wizard.getModel().getReferenceImage();
+//		Rectangle r = AutoCropper.getNonblackRegion(image);
+//		if (r != null)
+//			System.out.println("Non-black: " + r.width + " x " + r.height + " pixels, top left corner at (" + r.x + ", " + r.y + ")");
+//		else
+//			System.out.println("Non-black: null");
+//		/// END TEST TEST TEST
 	}
 	
 	private void leavePage()

@@ -23,28 +23,43 @@ import ij.process.ImageProcessor;
 public class RegistrationEngine
 {
 	private Registerer registerer;
+	private Opener opener;  // ImageJ image opener object
 	
 	public RegistrationEngine()
 	{
 		this.registerer = new Registerer();
+		this.opener = new Opener();
 	}
 	
-	public void register(List<Path> inputFiles, Path outputFolder, Rectangle rect, int maxShiftX, int maxShiftY)
+	public void register(List<Path> inputFiles, Path outputFolder, Rectangle templatePatchRect, int maxShiftX, int maxShiftY, Rectangle autoCropRect) throws Exception  
+	// autoCropRect==null means don't auto-crop
 	{
-		// ImageJ image opener object
-		Opener opener = new Opener();  
-		
 		// Show info on reference patch
-		System.out.println(String.format("Reference patch: top-left corner x=%d y=%d, width=%d height=%d", rect.x, rect.y, rect.width, rect.height));
-		System.out.println("Maximum shift in pixels: X=" + maxShiftX + " Y=" + maxShiftY);		
+		System.out.println(String.format("Reference patch: top-left corner x=%d y=%d, width=%d height=%d", templatePatchRect.x, templatePatchRect.y, templatePatchRect.width, templatePatchRect.height));
+		System.out.println("Maximum shift in pixels: X=" + maxShiftX + " Y=" + maxShiftY);
+		
+		if (autoCropRect != null)
+		{
+			System.out.println("Autocropping to " + autoCropRect);
+						
+			Rectangle newTemplatePatchRect = autoCropRect.intersection(templatePatchRect);
+			if (newTemplatePatchRect.isEmpty())
+				throw new RuntimeException("The auto-crop rectangle and the user-defined template patch do not overlap. After cropping there is not template patch to use for registration anymore. Please select a template patch that overlaps with the non-black region of the image.");
+			
+			newTemplatePatchRect.x = newTemplatePatchRect.x - autoCropRect.x;
+			newTemplatePatchRect.y = newTemplatePatchRect.y - autoCropRect.y;
+			
+			templatePatchRect = newTemplatePatchRect;
+			System.out.println("New template patch rect: " + templatePatchRect);
+		}
 
 		// Coordinates of the top-left corner of the reference patch in the original image.
-		final int initialX = rect.x;
-		final int initialY = rect.y;
+		final int initialX = templatePatchRect.x;
+		final int initialY = templatePatchRect.y;
 		
 		// Extract reference patch from the first image
-		ImagePlus firstImage = opener.openImage(inputFiles.get(0).toString());
-		ImageProcessor referencePatch = cropImage(firstImage, rect);
+		ImagePlus firstImage = loadImage(inputFiles.get(0).toString(), autoCropRect);
+		ImageProcessor referencePatch = cropImage(firstImage, templatePatchRect);
 
 		// Process all images in the input folder.
 		
@@ -68,15 +83,12 @@ public class RegistrationEngine
 			
 			System.out.println("Image " + sliceNr + "/" + numSlices + " : " + inputFile.toString() + "...");
 			loadStart = System.nanoTime();
-			ImagePlus imagePlus = opener.openImage(inputFile.toString());
+			ImagePlus imagePlus = loadImage(inputFile.toString(), autoCropRect);
 			loadEnd = System.nanoTime();
-			
-			if (imagePlus == null)
-				break; // TODO: this indicates an error during reading of the image - make sure the user is informed properly
 			
 			ImageProcessor image = imagePlus.getProcessor();
 			if (image == null)
-				break; // TODO: inform user
+				throw new RuntimeException("Failed to get ImageProcessor for image " + inputFile.toString());
 
 			// Find coordinates (with respect to the full image) of the region where we will look for the patch.
 			// So this rectangular crop of the image needs to be sent to Quasar.
@@ -136,12 +148,14 @@ public class RegistrationEngine
 		}
 	}
 	
-	public void publish(Double... chunks)
+	
+	
+	protected void publish(Double... chunks)
 	{
 		// Will be overridden
 	}
 	
-	public void process(List<Double> percentages)
+	protected void process(List<Double> percentages)
 	{
 		// Will be overridden
 	}
@@ -199,5 +213,27 @@ public class RegistrationEngine
 		imp.setRoi(origRoi);
 		
 		return crop;
+	}
+	
+	private ImagePlus loadImage(String filename, Rectangle cropRect) throws Exception
+	// if cropRect is non-null the image gets cropped to it after loading,
+	// if cropRect is null the loaded image is returned as-is.
+	// (should never return null)
+	{
+		ImagePlus imagePlus = opener.openImage(filename);
+		if (imagePlus == null)
+		{
+			throw new RuntimeException("Failed to load image " + filename);
+		}
+		
+		if (cropRect == null)
+		{
+			return imagePlus;
+		}
+		else
+		{
+			imagePlus.setRoi(cropRect);
+			return imagePlus.duplicate();
+		}
 	}
 }

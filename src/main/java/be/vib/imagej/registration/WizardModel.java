@@ -1,5 +1,6 @@
 package be.vib.imagej.registration;
 
+import java.awt.Rectangle;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -22,6 +23,7 @@ public class WizardModel
 	private Path outputFolder;
 	private List<Path> inputFiles = new ArrayList<Path>();
 	private ImagePlus referenceImage;
+	private Rectangle nonBlackRegion;  // the non-black region in the reference image (null means it has not been calculated yet; if it isEmpty() then the image is completely black); the WizardModel does _not_ track whether or not the user wants auto-cropping to occur.
 	
 	public WizardModel()
 	{
@@ -29,6 +31,7 @@ public class WizardModel
 		this.outputFolder = null;
 		this.inputFiles = null;  // we'll read the actual input files (there may be thousands in the input folder) when we actually need them
 		this.referenceImage = null;
+		this.nonBlackRegion = null;
 	}
 	
 	public void reset()
@@ -83,7 +86,11 @@ public class WizardModel
 
 	public void setReferenceImage(ImagePlus referenceImage)
 	{
-		this.referenceImage = referenceImage;
+		if (referenceImage != this.referenceImage)
+		{
+			this.referenceImage = referenceImage;
+			this.nonBlackRegion = null; // the non-black region will be recalculated lazily
+		}
 	}
 	
 	public void lockReferenceImage(boolean lock)
@@ -95,6 +102,21 @@ public class WizardModel
 			referenceImage.lock();
 		else if (!lock && referenceImage.isLocked())
 			referenceImage.unlock();
+	}
+	
+	public Rectangle getNonblackRegion() // returns the part of the reference image that is not a completely black border
+	{
+		if (nonBlackRegion != null)
+		{
+			return nonBlackRegion;
+		}
+		else
+		{
+			nonBlackRegion = AutoCropper.getNonblackRegion(this.referenceImage);
+			assert(nonBlackRegion != null);
+			System.out.println("Calculated nonBlackRegion: " + nonBlackRegion);  // DEBUGGING
+			return nonBlackRegion;
+		}
 	}
 	
 	private List<Path> getFiles(Path folder, String filePattern)

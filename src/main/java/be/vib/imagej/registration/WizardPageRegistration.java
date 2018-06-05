@@ -2,6 +2,7 @@ package be.vib.imagej.registration;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -10,12 +11,15 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 
 @SuppressWarnings("serial")
 public class WizardPageRegistration extends WizardPage
 {		
 	private MaxShiftPanel maxShiftPanel;
 	private SliceThicknessCorrectionPanel sliceThicknessCorrectionPanel;
+	private AutoCropPanel autoCropPanel;
 	private JButton startButton;
 	private JButton cancelButton;
 	private JLabel statusLabel;
@@ -29,14 +33,6 @@ public class WizardPageRegistration extends WizardPage
 		buildUI();
 	}
 
-	// TODO: after registration, report on max shift in X and Y;
-	//       this may help the user gain some intuition on how large these shifts typically are.
-	// TODO? while registering, make a plot of the X and Y shifts?
-	
-	// TODO: log/print the exact registration parameters: max shift x & y, reference patch size, and reference patch location;
-	
-	// TODO: add summary section again with indication of input and output folders - we don't want to accidentally dump a large amount of files in the wrong place...
-	
 	private void buildUI()
 	{		
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -59,6 +55,8 @@ public class WizardPageRegistration extends WizardPage
 		maxShiftPanel = new MaxShiftPanel();
 	
 		sliceThicknessCorrectionPanel = new SliceThicknessCorrectionPanel();
+		
+		autoCropPanel = new AutoCropPanel(wizard.getModel());
 	
 		startButton.setAlignmentX(CENTER_ALIGNMENT);
 		cancelButton.setAlignmentX(CENTER_ALIGNMENT);
@@ -66,7 +64,7 @@ public class WizardPageRegistration extends WizardPage
 				
 		JPanel registrationPanel = new JPanel();
 		registrationPanel.setLayout(new BoxLayout(registrationPanel, BoxLayout.Y_AXIS));
-		registrationPanel.setBorder(BorderFactory.createTitledBorder("Registration"));
+		registrationPanel.setBorder(new CompoundBorder(BorderFactory.createTitledBorder("Registration"), new EmptyBorder(10, 10, 10, 10)));
 		registrationPanel.add(startButton);
 		registrationPanel.add(progressBar);
 		registrationPanel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -79,10 +77,11 @@ public class WizardPageRegistration extends WizardPage
 		maxShiftPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, maxShiftPanel.getMaximumSize().height));
 		sliceThicknessCorrectionPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, sliceThicknessCorrectionPanel.getMaximumSize().height));
 		registrationPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, registrationPanel.getMaximumSize().height));
+		autoCropPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, registrationPanel.getMaximumSize().height));		
 
 		add(maxShiftPanel);
 		add(sliceThicknessCorrectionPanel);
-//		add(Box.createRigidArea(new Dimension(0, 10)));
+		add(autoCropPanel);
 		add(registrationPanel);
 		add(Box.createVerticalGlue());
 
@@ -113,25 +112,29 @@ public class WizardPageRegistration extends WizardPage
 		progressBar.setVisible(true);
 				
 		Runnable whenDone = () -> {
-			busyRegistering = false;
-			cancelButton.setVisible(false);
-			statusLabel.setText(worker.isCancelled() ? "Registration cancelled": "Registration done");
-			progressBar.setVisible(false);
-			wizard.updateButtons();
+			setRegistrationDone(worker.isCancelled() ? "<html><font color=red>Registration cancelled.</font></html>": "Registration done.");
+		};
+		
+		Consumer<String> whenError = (String msg) -> {
+			setRegistrationDone("<html><font color=red>Registration failed.</font><p>" + msg + "</html>");
 		};
 			
 		WizardModel model = wizard.getModel();
-		Rectangle rect = model.getReferenceImage().getRoi().getBounds();
+		Rectangle templatePatchRect = model.getReferenceImage().getRoi().getBounds();
 		
-		RegistrationParameters parameters = new RegistrationParameters(model.getInputFiles(), model.getOutputFolder(), rect, maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(), sliceThicknessCorrectionPanel.thicknessCorrection(), sliceThicknessCorrectionPanel.thicknessNM());
+		RegistrationParameters parameters = new RegistrationParameters(model.getInputFiles(), model.getOutputFolder(),
+																	   templatePatchRect,
+																	   maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(),
+																	   sliceThicknessCorrectionPanel.thicknessCorrection(), sliceThicknessCorrectionPanel.thicknessNM(),
+																	   autoCropPanel.getNonblackRegion());
 
-		worker = new RegistrationSwingWorker(parameters, progressBar, whenDone);
+		worker = new RegistrationSwingWorker(parameters, progressBar, whenDone, whenError);
 		
 		// Run the registration on a separate worker thread and return here immediately.
 		// Once registration has completed, the worker will automatically update the user interface to indicate this.
 		worker.execute();
 	}
-
+	
 	@Override
 	public void arriveFromPreviousPage()
 	{
@@ -156,5 +159,14 @@ public class WizardPageRegistration extends WizardPage
 		cancelButton.setVisible(false);
 		progressBar.setVisible(false);
 		statusLabel.setVisible(false);
+	}
+	
+	private void setRegistrationDone(String message)  // called when the registration is done (either successful, or failed with an error, or cancelled)
+	{
+		busyRegistering = false;
+		cancelButton.setVisible(false);
+		statusLabel.setText(message);
+		progressBar.setVisible(false);
+		wizard.updateButtons();		
 	}
 }
