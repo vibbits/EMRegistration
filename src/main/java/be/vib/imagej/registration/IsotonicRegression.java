@@ -35,9 +35,9 @@ public class IsotonicRegression
 		final int n = a.length;
 		assert(w.length == n);
 		
-		int[] S = new int[n+1];  // defines which old point the new point corresponds
-		double[] aprime = new double[n];
-		double[] wprime = new double[n];
+		double[] aprime = new double[n]; // at the end this will hold the result of the isotonic regression, but with successive identical values coalesced
+		double[] wprime = new double[n]; // updated weights
+		int[] S = new int[n+1]; // this array can be used to unpack the aprime array back to a full length result array with sometimes succesive identical values
 		
 		aprime[0] = a[0];
 		wprime[0] = w[0];
@@ -72,6 +72,8 @@ public class IsotonicRegression
 		// actual result array which will have (non-strictly) increasing values where identical numbers are repeated.
 		// So aprime[] may have less elements than a[] and y[], but a[] and y[] will have the same number of elements.
 		
+		// Unpack the aprime array back into a full length output array.
+		// S[k+1] - S[k] is the number of times that aprime[k] should be repeated in the output array
 		double[] y = new double[n];
 		for (int k = 0; k <= j; k++)
 		{
@@ -125,7 +127,7 @@ public class IsotonicRegression
 		final double a6[] = {2.0, 1.0};
 		final double y6[] = {1.5, 1.5};
 
-		// Test a few cases		
+		// Test cases		
 		CheckEquality(IsotonicRegression.Fit(a1), y1, "Testcase 1");
 		CheckEquality(IsotonicRegression.Fit(a2), y2, "Testcase 2");
 		CheckEquality(IsotonicRegression.Fit(a3), y3, "Testcase 3");
