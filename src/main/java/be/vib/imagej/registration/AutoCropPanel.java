@@ -14,7 +14,7 @@ class AutoCropPanel extends JPanel
 	private WizardModel wizardModel;
 	private JCheckBox autoCropCheckbox;
 	private JLabel autoCropInfo;
-	private boolean autoCrop = false;
+	private boolean autoCrop = true;
 	
 	public AutoCropPanel(WizardModel wizardModel)
 	{		
