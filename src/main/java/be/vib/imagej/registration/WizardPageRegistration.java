@@ -126,6 +126,7 @@ public class WizardPageRegistration extends WizardPage
 																	   templatePatchRect,
 																	   maxShiftPanel.getMaxShiftX(), maxShiftPanel.getMaxShiftY(),
 																	   sliceThicknessCorrectionPanel.thicknessCorrection(), sliceThicknessCorrectionPanel.thicknessNM(),
+																	   sliceThicknessCorrectionPanel.preserveSliceOrder(), 
 																	   autoCropPanel.getNonblackRegion());
 
 		worker = new RegistrationSwingWorker(parameters, progressBar, whenDone, whenError);

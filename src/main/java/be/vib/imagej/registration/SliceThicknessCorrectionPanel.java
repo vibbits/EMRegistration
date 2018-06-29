@@ -15,12 +15,14 @@ class SliceThicknessCorrectionPanel extends JPanel
 	private static double defaultThicknessNM = 5.0;   // 5 nm slice thickness is reasonably common for FIB SEM
 	
 	private JCheckBox thicknessCorrectionCheckbox;
+	private JCheckBox preserveSliceOrderCheckbox;
 	private JFormattedTextField thicknessField;
 	private JLabel thicknessLabel;
 	private JLabel thicknessUnits;
 	
-	private double thicknessNM = defaultThicknessNM; // in nanometer; only valid if thicknessCorrection==true
-	private boolean thicknessCorrection = false;
+	private double thicknessNM = defaultThicknessNM;  // in nanometer; only valid if thicknessCorrection==true
+	private boolean thicknessCorrection = true;
+	private boolean preserveSliceOrder = true;  // preserveSliceOrder is only meaningful if thicknessCorrection==true
 	
 	public SliceThicknessCorrectionPanel()
 	{		
@@ -46,6 +48,10 @@ class SliceThicknessCorrectionPanel extends JPanel
 		thicknessCorrectionCheckbox.setSelected(thicknessCorrection);
 		thicknessCorrectionCheckbox.addActionListener(e -> { thicknessCorrection = thicknessCorrectionCheckbox.isSelected(); EnableSliceThicknessControls(thicknessCorrection);  });
 		
+		preserveSliceOrderCheckbox = new JCheckBox("Preserve slice order");
+		preserveSliceOrderCheckbox.setSelected(preserveSliceOrder);
+		preserveSliceOrderCheckbox.addActionListener(e -> { preserveSliceOrder = preserveSliceOrderCheckbox.isSelected(); });
+		
 		EnableSliceThicknessControls(thicknessCorrection);
 		
 		GroupLayout layout = new GroupLayout(this);
@@ -59,7 +65,8 @@ class SliceThicknessCorrectionPanel extends JPanel
 		    				.addGroup(layout.createSequentialGroup()
 		    							.addComponent(thicknessLabel)
 		    							.addComponent(thicknessField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE) // do not let edit field use all available horizontal space
-		    							.addComponent(thicknessUnits))));
+		    							.addComponent(thicknessUnits))
+		    				.addComponent(preserveSliceOrderCheckbox)));
 		
 		layout.setVerticalGroup(
 			layout.createSequentialGroup()
@@ -67,7 +74,8 @@ class SliceThicknessCorrectionPanel extends JPanel
 				.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 							.addComponent(thicknessLabel)
 							.addComponent(thicknessField)
-							.addComponent(thicknessUnits)));		
+							.addComponent(thicknessUnits))
+				.addComponent(preserveSliceOrderCheckbox));		
 		
 		setLayout(layout);
 	}
@@ -77,6 +85,10 @@ class SliceThicknessCorrectionPanel extends JPanel
 		thicknessLabel.setEnabled(enable);
 		thicknessField.setEnabled(enable);
 		thicknessUnits.setEnabled(enable);
+		
+		// The question of whether or not to preserve the slice ordering is only relevant
+		// if we resample the slices to deal with slice thickness variation.
+		preserveSliceOrderCheckbox.setEnabled(enable);
 	}
 	
 	public double thicknessNM()
@@ -87,6 +99,11 @@ class SliceThicknessCorrectionPanel extends JPanel
 	public boolean thicknessCorrection()
 	{
 		return thicknessCorrection;
+	}
+	
+	public boolean preserveSliceOrder()
+	{
+		return preserveSliceOrder;
 	}
 	
 	public void setEditable(boolean editable)

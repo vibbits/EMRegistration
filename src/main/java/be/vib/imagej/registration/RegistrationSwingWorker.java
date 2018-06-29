@@ -16,8 +16,8 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 	private Runnable whenDone;  // Will be run on the EDT as soon as the RegistrationSwingWorker is done registering. Can be used to indicate in the UI that we are done.
 	private Consumer<String> whenError;
 	
-	// The progressbar accepts values from 0 - 1000 (for 0 to 100%)
-	// but with 10x accuracy so the progressbar also moves if we only make 0.1% progress,
+	// The progress bar accepts values from 0 - 1000 (for 0 to 100%)
+	// but with 10x accuracy so the progress bar also moves if we only make 0.1% progress,
 	// which is common because we typically process stacks with hundreds of files)
 	public static final int progressBarScaleFactor = 10;
 	
@@ -68,7 +68,7 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 		
 		if (params.sliceThicknessCorrection)
 		{
-			ResampleInfo[] resampleInfo = SliceThicknessCorrection.nearestNeighborResample(params.inputFiles, params.sliceThicknessNM);
+			ResampleInfo[] resampleInfo = SliceThicknessCorrection.nearestNeighborResample(params.inputFiles, params.sliceThicknessNM, params.preserveSliceOrder);
 			SliceThicknessCorrection.printResampleInfo(resampleInfo);
 			slices = SliceThicknessCorrection.getResampledFiles(resampleInfo);
 		}

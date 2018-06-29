@@ -27,7 +27,7 @@ public class SliceThicknessCorrection
 		}
 	}
 	
-	public static ResampleInfo[] nearestNeighborResample(List<Path> inputFiles, double sliceThicknessNM) // sliceThicknessNM in nanometers
+	public static ResampleInfo[] nearestNeighborResample(List<Path> inputFiles, double sliceThicknessNM, boolean preserveSliceOrder) // sliceThicknessNM in nanometers
 	{
 		// Extract the z-postion that is encoded in the filenames 
 		ArrayList<Pair> slices = parseFilenames(inputFiles);
@@ -38,8 +38,43 @@ public class SliceThicknessCorrection
 		boolean monotonic = slicePositionsMonotonicallyIncreasing(slices);
 		if (!monotonic)
 		{
-			System.out.println("Z-position of slices is *not* monotonically increasing! Re-ordering them.");
-			slices = sortByMonotonicallyIncreasingZ(slices);
+			if (preserveSliceOrder)
+			{
+				System.out.println("Z-position of slices is *not* monotonically increasing! Performing isotonic regression.");
+				
+				System.out.println("Before isotonic regression:");
+				for (int i = 0; i < slices.size(); i++)
+					System.out.println(slices.get(i).z + " " + slices.get(i).path);
+
+				// Extract zs
+				int n = slices.size();
+				double[] zs = new double[n];
+				for (int i = 0; i < n; i++)
+					zs[i] = slices.get(i).z;
+
+				// Perform isotonic regression on the z positions
+				// The result is z's that are as close to the original zs as possible,
+				// but are non-decreasing.
+				// FIXME: they do result in identical zs wherever there were decreasing zs in the original zs.
+				//        we should probably replace these identical values with slightly increasing values, so that
+				//        if we perform nearest neighbor sampling in that region we use these slices and in the right order.
+				double[] isotonic = IsotonicRegression.Fit(zs);
+
+				// Update the slice positions
+				for (int i = 0; i < n; i++)
+					slices.get(i).z = isotonic[i];
+
+				System.out.println("After isotonic regression:");
+				for (int i = 0; i < slices.size(); i++)
+					System.out.println(slices.get(i).z + " " + slices.get(i).path);
+
+			}
+			else
+			{
+				System.out.println("Z-position of slices is *not* monotonically increasing! Re-ordering them.");
+				slices = sortByMonotonicallyIncreasingZ(slices);
+			}
+
 		}
 				
 		ResampleInfo[] resampleInfo = doNearestNeighborResampling(slices, sliceThicknessNM);
