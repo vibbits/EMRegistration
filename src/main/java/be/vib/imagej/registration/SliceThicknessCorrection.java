@@ -2,6 +2,7 @@ package be.vib.imagej.registration;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,10 +56,17 @@ public class SliceThicknessCorrection
 				// Perform isotonic regression on the z positions
 				// The result is z's that are as close to the original zs as possible,
 				// but are non-decreasing.
-				// FIXME: they do result in identical zs wherever there were decreasing zs in the original zs.
-				//        we should probably replace these identical values with slightly increasing values, so that
-				//        if we perform nearest neighbor sampling in that region we use these slices and in the right order.
 				double[] isotonic = IsotonicRegression.Fit(zs);
+
+				// The output of the Isotonic Regression however yields sequences of slices that
+				// are taken to have identical z-values (this indeed minimizes the square error
+				// in the regression). This however means that nearest neighbor sampling for z-values
+				// just below and above a region of flat z's, will end up taking the same slice,
+				// even though multiple slices have the same z, and it would make more sense to pick
+				// the first and the last slice in this region.
+				// We achieve this by modifying the output of isotonic regression so that the z-values
+				// are modified from non-decreasing (but possibly equal) to *strictly* non-decreasing (never equal).				
+				makeStrictlyMonotonic(isotonic);
 
 				// Update the slice positions
 				for (int i = 0; i < n; i++)
@@ -208,5 +216,102 @@ public class SliceThicknessCorrection
 		}
 		
 		return slices;
+	}
+	
+	// Make the zs[i] slightly monotonically increasing, for i=i1 to i2.
+	// On input this range of zs[i] is all identical values.
+	private static void makeStrictlyMonotonic(double[] zs, int i1, int i2)  // assumption: zs are in micrometers
+	{
+		assert(i2 < zs.length);
+		assert(i1 < i2);
+		
+		// The zs[i] for i1...i2 are all equal, but we want to make them monotonic.
+		// We would like z's to increase by ideal_eps (but this may not be possible - see below - in that case we pick a smaller eps).
+		 
+		final double ideal_eps = 0.1 / 1000.0;   // eps = 0.1 nanometer
+		 
+		int n = i2 - i1;  // number of samples to make strictly monotonic (but now have all the same z)
+		 
+		double max_dz_left = (i1 == 0) ? Double.MAX_VALUE : zs[i1] - zs[i1 - 1];
+		double max_dz_right = (i2 == zs.length-1) ? Double.MAX_VALUE : zs[i2 + 1] - zs[i2];
+		 
+		assert(max_dz_left  > 0);
+		assert(max_dz_right > 0);
+		 
+		double max_dz = Math.min(max_dz_left, max_dz_right);  // we should not increase/decrease the z value at the end/begin of the interval by max_dz
+		double max_eps = 2.0 * max_dz / n;
+		 
+		double eps = 0.95 * Math.min(ideal_eps, max_eps);  // the 0.95 is to ensure we do not end up with *exactly* equal z values at the interval boundaries 
+		 
+		// Ideally we want to modify the equals z's so that each z is eps bigger than the previous z.
+		// But we need to be careful not to destroy the monotonicity of the samples outside the i1...i2 interval.
+		 
+		double i_mid = (i1 + i2) / 2.0;  // fractional index, only for interpolation
+		 
+		for (int i = i1; i <= i2; ++i)
+		{
+			 double dz = (i - i_mid) * eps;
+		 	 zs[i] += dz;
+		}
+	}
+	
+	private static void makeStrictlyMonotonic(double[] zs)  // assumption: zs are in micrometers
+	{
+		if (zs.length == 0)
+			return;
+		
+		double interval_z = zs[0];		
+		int interval_begin = 0;
+		int interval_end = 0;		
+		
+		for (int i = 1; i < zs.length; i++)
+		{
+				if (zs[i] == interval_z)
+				{
+					// extend interval
+					interval_end = i;
+					
+					// correct the z value now (we're at the end of our i-loop and won't have the chance to do it later)
+					if (interval_end == zs.length-1)
+					{
+						makeStrictlyMonotonic(zs, interval_begin, interval_end);
+					}
+				}
+				else
+				{
+					if (interval_end != interval_begin)
+					{
+						makeStrictlyMonotonic(zs, interval_begin, interval_end);						
+					}
+					
+					interval_begin = i;
+					interval_end = i;
+					interval_z = zs[i];
+				}
+		}
+	}
+	
+	public static void main(String[] args)
+	{
+		double[] zs1 = { 1.0 };
+		double[] zs2 = { 1.0, 1.0 };
+		double[] zs3 = { 1.0, 1.0, 1.5, 2.0, 3.0, 3.0, 3.0, 4.0, 5.0, 6.0, 6.0 };  // flat zs at both ends
+		double[] zs4 = { 1.0, 2.0, 2.00000001, 2.00000001, 2.00000001, 2.00000001, 4.0, 5.0, 6.0, 6.0 }; // difference between flat region and neighborhood is smaller than our ideal eps
+
+		System.out.println(Arrays.toString(zs1));
+		makeStrictlyMonotonic(zs1);
+		System.out.println(Arrays.toString(zs1));
+		
+		System.out.println(Arrays.toString(zs2));
+		makeStrictlyMonotonic(zs2);
+		System.out.println(Arrays.toString(zs2));
+
+		System.out.println(Arrays.toString(zs3));
+		makeStrictlyMonotonic(zs3);
+		System.out.println(Arrays.toString(zs3));
+
+		System.out.println(Arrays.toString(zs4));
+		makeStrictlyMonotonic(zs4);
+		System.out.println(Arrays.toString(zs4));
 	}
 }

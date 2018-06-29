@@ -1,16 +1,9 @@
-Showstopper:
-- (none)
-
 Must have:
 - Better output filenames, we probably want it to have the sample position as well as the corresponding z position from the original filenames
 - Fix problem with window showing the first slice when moving back and fro in the wizard (sometimes multiple windows get created, and it is possible but undesirable for the user to close that window).
-- If during isotonic regression we produce slices with identical z values, then tweak these values a tiny bit so that the z positions of these slices are slightly increasing.
-  This will ensure that if we resample both before and after this z position, we get the first and the last slice of this series.
-  (If all slices have identical z, then we would pick the same slices for both.)
 
 Nice to have:
 - Add estimated time till completion when registering
-
 
 Ideas:
 - Rather than our current nearest neighbor sampling (along z), experiment with interpolation instead.
