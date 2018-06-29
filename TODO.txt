@@ -4,15 +4,44 @@ Showstopper:
 Must have:
 - Better output filenames, we probably want it to have the sample position as well as the corresponding z position from the original filenames
 - Fix problem with window showing the first slice when moving back and fro in the wizard (sometimes multiple windows get created, and it is possible but undesirable for the user to close that window).
+- If during isotonic regression we produce slices with identical z values, then tweak these values a tiny bit so that the z positions of these slices are slightly increasing.
+  This will ensure that if we resample both before and after this z position, we get the first and the last slice of this series.
+  (If all slices have identical z, then we would pick the same slices for both.)
 
 Nice to have:
 - Add estimated time till completion when registering
-- Add (auto?) crop of the large black border around the actual sample
-- ...
 
-Idea:
+
+Ideas:
+- Rather than our current nearest neighbor sampling (along z), experiment with interpolation instead.
+  (This seems plausible from a mathematical point of view, but maybe not from a biologist's point of view, since it will
+  result in an image stack where none of the images contain actually observed pixels values. Nearest neighbor sampling also results in an an image stack
+  that is not correct (since the pixel values we output do not occur at those locations), but at least the values themselves do occur in reality, in
+  a nearby location.
+  
 - Store reference patch size and location (and possible algorithm parameters) in metadata of "the" result,
-  so we can reproduce/document the algorithm afterwards. Problem: currently there is not 1 single registered image stack file,
+  so we can reproduce/document the algorithm afterwards.
+  Problem: currently there is not 1 single registered image stack file,
   but the result is each registered slice as a single image file. Perhaps we should simply write a text file with the "registration protocol"?
+ 
+- While registering, make a plot of the X and Y shifts?
+  Too much work (for now), instead output a csv file for analysis afterwards
+	
+- Save a summary of the exact registration parameters:
+  + total # slices, slices with <= 0 thickness, pct slices with <= thickness
+  + max shift x & y
+  + reference patch size and location
+  + auto crop info
+  + slice thickness correction: yes/no (thickness preset: 5 nm)
+  + report max shift in x and y  (this may help the user gain some intuition on how large these shifts typically are.)
 
-
+- Save tables:
+  + filename, reported_z
+  + reported_z, isotonic_z  (in case user selected "preserve slice order")
+  + sample_z, closest_z (either reported_z or isotonic_z), filename_of_slice_with_closest_z
+  + sample_z, dx, dy (dx and dy are the registration shifts)
+	
+- ? Add summary section again with indication of input and output folders,
+    we don't want to accidentally dump a large amount of files in the wrong place...
+	
+  
