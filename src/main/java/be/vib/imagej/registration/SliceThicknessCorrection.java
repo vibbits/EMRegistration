@@ -181,9 +181,12 @@ public class SliceThicknessCorrection
 	// Returns whether the z positions of the slices are increasing
 	// monotonically. This should be the case since they should be
 	// successive slices of a 3D EM stack.
-	// 
-	// TODO: note, in practice they are not monotonic :-(
-	//       see first few slices of F:\Datasets\EM Registration\Project_103_Patrizia\2018_03_16_P103_shPerk_bQ\Raw_data
+	// However, in practice they are *not* monotonic :-( Apparently
+	// the microscope sometimes overestimates the z-position of a slice,
+	// and then corrects it to a smaller values in a next slice. This
+	// is equivalent to the microscope reporting (physically impossible)
+	// negative slice thicknesses...
+	// See first few slices of F:\Datasets\EM Registration\Project_103_Patrizia\2018_03_16_P103_shPerk_bQ\Raw_data
 	private static boolean slicePositionsMonotonicallyIncreasing(ArrayList<Pair> slices)
 	{
 		double zprev = -1e9; // -infinity
