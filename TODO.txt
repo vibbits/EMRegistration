@@ -4,6 +4,9 @@ Must have:
 
 Nice to have:
 - Add estimated time till completion when registering
+- Ability do only correct for slice thickness, without registration.
+  (Annoying for user interface: no need to specify a template ROI patch then. Maybe remove the ROI step from the wizard,
+  and instead pop up a dialog only when this is needed, just before registration?)
 
 Ideas:
 - Rather than our current nearest neighbor sampling (along z), experiment with interpolation instead.
