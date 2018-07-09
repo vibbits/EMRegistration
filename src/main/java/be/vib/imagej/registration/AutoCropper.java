@@ -18,11 +18,11 @@ public class AutoCropper
 		final int imageHeight = image.getHeight();
 		final int imageWidth = image.getWidth();
 		
-		final int topBlackMargin = getNumBlackRows(imp, 0, imageHeight-1, +1);
-		final int bottomBlackMargin = getNumBlackRows(imp, imageHeight-1, 0, -1);
+		final int topBlackMargin = getNumBlackRows(imp, 0, imageHeight-1, +1);  // count black rows, starting at the top of the image and moving down
+		final int bottomBlackMargin = getNumBlackRows(imp, imageHeight-1, 0, -1); // count black rows, starting at the bottom of the image and moving up
 		
-		final int leftBlackMargin = getNumBlackColumns(imp, 0, imageWidth-1, +1);
-		final int rightBlackMargin = getNumBlackColumns(imp, imageWidth-1, 0, -1);
+		final int leftBlackMargin = getNumBlackColumns(imp, 0, imageWidth-1, +1); // count black columns, starting at the left side of the image and moving to the right
+		final int rightBlackMargin = getNumBlackColumns(imp, imageWidth-1, 0, -1); // count black columns, starting at the right side of the image and moving to the left
 		
 		final int x = leftBlackMargin;
 		final int y = topBlackMargin;
@@ -35,7 +35,8 @@ public class AutoCropper
 			return new Rectangle();  // empty rectangle; signals a completely black image
 	}
 	
-	// TODO? can we generalize/unify the black columns and rows functions below?
+	// The two functions below dealing with black rows or columns could be unified into a single function,
+	// but that would sacrifice readability, so we decided against it.
 
 	private static int getNumBlackRows(ImageProcessor imp, int startRow, int endRow, int rowIncrement)
 	{
