@@ -194,12 +194,12 @@ public class RegistrationEngine
 	}
 	
 	// Print some timing statistics
-	private void printStatistics(long readFileStart, long readFileEnd, long registerStart, long registerEnd, long saveStart, long saveEnd)
+	private void printStatistics(long readFileStart, long readFileEnd, long registrationStart, long registrationEnd, long saveStart, long saveEnd) // time stamps in nanoseconds
 	{
-		long readDuration = (readFileEnd - readFileStart) / 1000000;
-		long registerDuration = (registerEnd - registerStart) / 1000000;
-		long saveDuration = (saveEnd - saveStart) / 1000000;
-		System.out.println(String.format("Load %d, register %d, save %d (ms)", readDuration, registerDuration, saveDuration));
+		long readTimeMilliSec = (readFileEnd - readFileStart) / 1000000;
+		long registrationTimeMilliSec = (registrationEnd - registrationStart) / 1000000;
+		long saveTimeMilliSec = (saveEnd - saveStart) / 1000000;
+		System.out.println(String.format("Load %d, register %d, save %d (ms)", readTimeMilliSec, registrationTimeMilliSec, saveTimeMilliSec));
 	}
 	
 	// Returns a copy of the given image cropped to a rectangular region of interest.
