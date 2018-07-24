@@ -8,7 +8,8 @@ import ij.process.ImageProcessor;
 public class AutoCropper
 {
 	// "Black" here means pixels with value 0.
-	// Never returns null; the returned rectangle will be empty (isEmpty()==true) for images without black border.
+	// Returns null if the input image is null; otherwise returns the rectangle with the non-black region.
+	// The returned rectangle will be empty (isEmpty()==true) for images without black border.
 	static public Rectangle getNonblackRegion(ImagePlus image)
 	{
 		if (image == null) return null;

@@ -112,8 +112,7 @@ public class WizardModel
 		}
 		else
 		{
-			nonBlackRegion = AutoCropper.getNonblackRegion(this.referenceImage);
-			assert(nonBlackRegion != null);
+			nonBlackRegion = AutoCropper.getNonblackRegion(this.referenceImage); // returns a null Rectangle if referenceImage is null (e.g. during initialization of the wizard)
 			System.out.println("Calculated nonBlackRegion: " + nonBlackRegion);  // DEBUGGING
 			return nonBlackRegion;
 		}

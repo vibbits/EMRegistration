@@ -71,9 +71,9 @@ class AutoCropPanel extends JPanel
 	
 	private void updateCropInfoLabel()
 	{
-		if (autoCrop)
+		Rectangle r = getNonblackRegion();
+		if (r != null)
 		{
-			Rectangle r = wizardModel.getNonblackRegion();
 			if (!r.isEmpty())
 			{
 				autoCropInfo.setText("The input images will be cropped to a rectangle with top-left corner at (" + r.x + ", " + r.y + ") and bottom-right corner at (" + (r.x + r.width - 1) + ", " + (r.y + r.height - 1) + ").");
