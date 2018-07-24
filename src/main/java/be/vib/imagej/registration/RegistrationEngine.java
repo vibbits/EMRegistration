@@ -80,6 +80,7 @@ public class RegistrationEngine
 			long registerEnd = 0;
 			long saveStart = 0;
 			long saveEnd = 0;
+			float averageSliceRegistrationDuration = -1.0f;  // -1 = sentinel = not estimated yet; otherwise time in ns
 			
 			System.out.println("Image " + sliceNr + "/" + numSlices + " : " + inputFile.toString() + "...");
 			loadStart = System.nanoTime();
@@ -142,13 +143,56 @@ public class RegistrationEngine
 			// Show some timing statistics
 			printStatistics(loadStart, loadEnd, registerStart, registerEnd, saveStart, saveEnd);
 			
+			// Update slice registration estimate
+			// (Exponential moving average)
+			float sliceRegistrationDuration = saveEnd - loadStart;
+			float alpha = 0.5f;  // weight decrease factor for exponential moving average
+			if (averageSliceRegistrationDuration < 0)  // we don't have an estimate yet
+			{
+				averageSliceRegistrationDuration = sliceRegistrationDuration;
+			}
+			else
+			{
+				averageSliceRegistrationDuration = alpha * sliceRegistrationDuration + (1.0f - alpha) * averageSliceRegistrationDuration;
+			}
+			System.out.println("ETA=" + humanReadableDuration((numSlices - sliceNr) * averageSliceRegistrationDuration));
+			// TODO: somehow show this in the UI. In the slider? How does that work with publish()...?
+			
 			// Progress feedback
 			publish((100.0 * sliceNr) / numSlices);
 			sliceNr++;
 		}
 	}
 	
-	
+	// humanReadableDuration() turns a duration in nanoseconds into a human readable string
+	// with hours, minutes and seconds. If the duration is shorter than
+	// an hour resp. a minute, only minutes and seconds resp. only seconds
+	// are used in the string.
+	private String humanReadableDuration(float nanoSeconds)
+	{
+		long seconds = Math.round(nanoSeconds / 1e9f);
+		long minutes = 0;
+		long hours = 0;
+		
+		hours = seconds / 3600;
+		seconds -= 3600 * hours;
+		
+		minutes = seconds / 60;
+		seconds -= 60 * minutes;
+		
+		if (hours > 0)
+		{
+			return hours + " h " + minutes + " min " + seconds + " sec";
+		}
+		else if (minutes > 0)
+		{
+			return minutes + " min " + seconds + " sec";
+		}
+		else
+		{
+			return seconds + " sec";			
+		}
+	}
 	
 	protected void publish(Double... chunks)
 	{
