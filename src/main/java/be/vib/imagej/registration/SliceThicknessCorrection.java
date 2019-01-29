@@ -154,8 +154,9 @@ public class SliceThicknessCorrection
 	{		
 		// We're assuming that the filenames always have this pattern:
 		//    prefix + "_" + slice number + "_" + "z=" + floating point number + "um" + ".tif"
+		// The floating point z value is allowed to be negative; this is odd but happens occassionally at the start of a FIB run.
 		// Example filename: "slice_00025_z=0.2908um.tif"
-		String regex = ".*_(\\d+)_z=(\\d*\\.?\\d*)um\\.[^\\.]+";
+		String regex = ".*_(\\d+)_z=(-?\\d*\\.?\\d*)um\\.[^\\.]+";
 		Pattern pattern = Pattern.compile(regex);
 		
 		ArrayList<Pair> slices = new ArrayList<Pair>();
