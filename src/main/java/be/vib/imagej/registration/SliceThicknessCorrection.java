@@ -157,7 +157,10 @@ public class SliceThicknessCorrection
 		{
 			Matcher m = pattern.matcher(path.toString());
 			boolean match = m.find();
-			assert(match); // TODO: throw error if no match?
+			if (!match)
+			{
+				throw new RuntimeException("The file " + path + " does not match our expected filename format string.");
+			}
 			
 			String sliceNumber = m.group(1); // for debugging only
 			String sliceZ = m.group(2);
