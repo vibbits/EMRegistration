@@ -7,14 +7,12 @@
 	<property name="q.file" value="src/main/quasar/registration.q"/>
 	<property name="qlib.dir" value="${build.dir}/qlib"/>
 	<property name="qlib.file" value="${qlib.dir}/registration.qlib"/>
-	<property name="quasarbridge" value="JavaQuasarBridge-0.0.1.jar"/>  <!-- TODO? rename to just QuasarBridge ? -->
-	<property name="plugin.name" value="QuasarRegistration-0.0.1.jar"/>
+	<property name="quasarbridge" value="JavaQuasarBridge-1.1.0.jar"/>
+	<property name="plugin.name" value="QuasarRegistration-0.0.3.jar"/>
 	<property name="fiji.plugins.dir" value="E:/Fiji.app/plugins"/>
-	<!-- <property name="minimalquasarzip.file" value="E:/git/bits/bioimaging/QuasarPortableInstaller_1.0.6590.25782_Windows_x64_runtime/Quasar.zip"/> -->
 	<property name="quasar.exe" value="E:/Program Files/Quasar/Quasar.exe"/>
 
 	<!-- Note: quasar.exe is needed to build the .qlib with denoising algorithms from their .q source counterparts. -->
-	<!-- Note: minimalquasarzip.file contains a zipped folder with a minimal Quasar runtime environment. It will be embedded in the JAR file. -->
 
 	<path id="classpath">
 		<fileset dir="e:/git/bits/bioimaging/JavaQuasarBridge/dist" includes="${quasarbridge}"/>
