@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import be.vib.bits.QExecutor;
-
+//import ij.IJ;
 import ij.ImagePlus;
 import ij.io.FileSaver;
 import ij.io.Opener;
@@ -44,13 +44,13 @@ public class RegistrationEngine
 						
 			Rectangle newTemplatePatchRect = autoCropRect.intersection(templatePatchRect);
 			if (newTemplatePatchRect.isEmpty())
-				throw new RuntimeException("The auto-crop rectangle and the user-defined template patch do not overlap. After cropping there is not template patch to use for registration anymore. Please select a template patch that overlaps with the non-black region of the image.");
+				throw new RuntimeException("The auto-crop rectangle and the user-defined template patch do not overlap. After cropping there is no template patch to use for registration anymore. Please select a template patch that overlaps with the non-black region of the image.");
 			
 			newTemplatePatchRect.x = newTemplatePatchRect.x - autoCropRect.x;
 			newTemplatePatchRect.y = newTemplatePatchRect.y - autoCropRect.y;
 			
 			templatePatchRect = newTemplatePatchRect;
-			System.out.println("New template patch rect: " + templatePatchRect);
+			System.out.println("New template patch rect coordinates, with respect to autocropped image: " + templatePatchRect);
 		}
 
 		// Coordinates of the top-left corner of the reference patch in the original image.
@@ -59,7 +59,9 @@ public class RegistrationEngine
 		
 		// Extract reference patch from the first image
 		ImagePlus firstImage = loadImage(inputFiles.get(0).toString(), autoCropRect);
+		
 		ImageProcessor referencePatch = cropImage(firstImage, templatePatchRect);
+//		IJ.save(new ImagePlus("reference patch", referencePatch), "e:\\emreg_refpatch.png");
 
 		// Process all images in the input folder.
 		
@@ -85,6 +87,7 @@ public class RegistrationEngine
 			System.out.println("Image " + sliceNr + "/" + numSlices + " : " + inputFile.toString() + "...");
 			loadStart = System.nanoTime();
 			ImagePlus imagePlus = loadImage(inputFile.toString(), autoCropRect);
+
 			loadEnd = System.nanoTime();
 			
 			ImageProcessor image = imagePlus.getProcessor();
@@ -277,7 +280,7 @@ public class RegistrationEngine
 		else
 		{
 			imagePlus.setRoi(cropRect);
-			return imagePlus.duplicate();
+			return imagePlus.crop();
 		}
 	}
 }
