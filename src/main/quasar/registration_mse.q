@@ -1,5 +1,5 @@
 
-import "TIFFIO.dll"
+import "TIFFIO.dll"   % CAREFUL: if we use this, then our minimal Quasar runtime must also ship TIFFIO.dll otherwise the qlib cannot be loaded on systems without a full Quasar 
 import "system.q"
 
 %
