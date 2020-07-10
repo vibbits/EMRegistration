@@ -12,7 +12,7 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
 import be.vib.bits.QExecutor;
-//import ij.IJ;
+// import ij.IJ; // For debugging, e.g. to save imageProcessor to TIFF
 import ij.ImagePlus;
 import ij.io.FileSaver;
 import ij.io.Opener;
@@ -131,7 +131,7 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 			System.out.println("New template patch rect coordinates, with respect to autocropped image: " + templatePatchRect);
 		}
 
-		// Coordinates of the top-left corner of the reference patch in the original image.
+		// Coordinates of the top-left corner of the reference patch (in the original image if autoCropRect is null, relative to TL corner of autoCropRect otherwise)
 		final int initialX = templatePatchRect.x;
 		final int initialY = templatePatchRect.y;
 		
@@ -139,7 +139,7 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 		ImagePlus firstImage = loadImage(inputFiles.get(0).toString(), autoCropRect);
 		
 		ImageProcessor referencePatch = cropImage(firstImage, templatePatchRect);
-//		IJ.save(new ImagePlus("reference patch", referencePatch), "e:\\emreg_refpatch.png");
+  		//IJ.save(new ImagePlus("reference patch", referencePatch), "e:\\emreg_refpatch.png");
 
 		// Process all images in the input folder.
 		
@@ -182,6 +182,9 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 			Rectangle cropRect = new Rectangle(cropTopLeftX, cropTopLeftY, cropBottomRightX - cropTopLeftX, cropBottomRightY - cropTopLeftY);
 			ImageProcessor croppedImage = cropImage(imagePlus, cropRect);
 			
+	  		//IJ.save(new ImagePlus("to register", croppedImage), "e:\\emreg_toregister"+sliceNr+".png");
+
+			
 			// Calculate the shift required to register this slice to the previous one.
 			RegistrationResult result = null;
 			try
@@ -199,7 +202,7 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 			}
 			
 			// Convert coordinates returned from Quasar (which are of the reference patch with respect to the cropped image)
-			// to coordinates in the full original image.
+			// to coordinates in the full original image.  (CHECKME: is comment correct if autoCropRect != null ?)
 			int bestPosX = cropTopLeftX + result.posX;
 			int bestPosY = cropTopLeftY + result.posY;
 			
@@ -277,10 +280,11 @@ public class RegistrationSwingWorker extends SwingWorker<Void, Double>
 	
 	// Returns an output file path like this:
 	// desired output folder + slice nr + original filename (without extension) + _registered + original extension (if any)
-	// FIXME - if we corrected for thickness, we probably want an indication of the sampled z and the closest original z (but we don't have that information available here)
-	//         (for now we added a counter prefix so that (1) if we correct for slice thickness and use the same input file multiple times, at least we get unique filenames;
-	//         and (2) if we re-order input files (because the input z's are not monotonically increasing, the registered output files reflect that different order!)
-	//         but this issue needs some more thought)
+	// IMPROVEME:
+	// If we corrected for thickness, we probably want an indication of the sampled z and the closest original z (but we don't have that information available here)
+	// (for now we added a counter prefix so that (1) if we correct for slice thickness and use the same input file multiple times, at least we get unique filenames;
+	// and (2) if we re-order input files (because the input z's are not monotonically increasing, the registered output files reflect that different order!)
+	// but this issue needs some more thought)
 	private static Path suggestOutputFilename(int sliceNr, Path inputFilePath, Path outputFolder)
 	{
 		String prefix = String.format("%05d", sliceNr) + "_";
