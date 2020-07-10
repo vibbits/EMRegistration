@@ -123,7 +123,7 @@ public class SliceThicknessCorrection
 			// Important note: the = in the >= comparison is mandatory because sometimes the microscope returns several slices with the same z value
 			// (because its z-value estimates are not always accurate and sometimes go up and down). The = sign in the >= ensures that we skip over identical
 			// z-values; without the = sign we would get stuck and stop increasing indexNearestZ.
-			while ((Math.abs(slices.get(indexNearestZ).z - desiredZ) >= Math.abs(slices.get(indexNearestZ + 1).z - desiredZ)) && (indexNearestZ < numOriginalSlices - 1))
+			while ((indexNearestZ < numOriginalSlices - 1) && (Math.abs(slices.get(indexNearestZ).z - desiredZ) >= Math.abs(slices.get(indexNearestZ + 1).z - desiredZ)))
 			{
 				indexNearestZ++;
 			}
