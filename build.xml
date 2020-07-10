@@ -55,7 +55,7 @@
 				<attribute name="Class-Path" value="${quasarbridge}"/>
 			</manifest>
 			<fileset dir="${build.dir}" includes="qlib/*.qlib"/>
-			<fileset dir="${src.dir}/main/resources" includes="**/images/*"/>
+			<!-- <fileset dir="${src.dir}/main/resources" includes="**/images/*"/> -->
 			<!-- <fileset file="${minimalquasarzip.file}"/> -->
 		</jar>
 	</target>
